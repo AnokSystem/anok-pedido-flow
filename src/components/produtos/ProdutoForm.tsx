@@ -40,12 +40,13 @@ export function ProdutoForm({ open, onOpenChange, onSubmit, produto, isLoading }
     defaultValues: {
       nome: produto?.nome || "",
       unidade: produto?.unidade || "un",
-      preco_unitario: produto?.preco_unitario ? String(produto.preco_unitario) : "",
+      preco_unitario: produto?.preco_unitario ? String(produto.preco_unitario).replace('.', ',') : "",
       descricao: produto?.descricao || "",
     },
   });
 
   const handleSubmit = (data: ProdutoFormData) => {
+    // Zod schema handles the conversion from string to number
     onSubmit(data);
   };
 
