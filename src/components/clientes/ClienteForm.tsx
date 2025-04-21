@@ -48,8 +48,9 @@ export function ClienteForm({ open, onOpenChange, onSubmit, cliente, isLoading }
       contato: cliente?.contato || "",
       email: cliente?.email || "",
       responsavel: cliente?.responsavel || "",
-      desconto_especial: cliente?.desconto_especial ? 
-        cliente.desconto_especial.toString().replace('.', ',') : "",
+      desconto_especial: cliente?.desconto_especial !== undefined
+        ? cliente.desconto_especial.toString().replace('.', ',')
+        : "",
     },
   });
 

@@ -41,10 +41,7 @@ export function ProdutoForm({ open, onOpenChange, onSubmit, produto, isLoading }
       nome: produto?.nome || "",
       unidade: produto?.unidade || "un",
       preco_unitario: produto ? 
-        produto.preco_unitario.toLocaleString('pt-BR', { 
-          minimumFractionDigits: 2, 
-          maximumFractionDigits: 2 
-        }).replace('.', ',') 
+        produto.preco_unitario.toString().replace('.', ',') 
         : "",
       descricao: produto?.descricao || "",
     },
