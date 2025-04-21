@@ -1,7 +1,6 @@
 
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { produtosMock } from "@/lib/mockData";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
   Table, 
@@ -13,8 +12,15 @@ import {
 } from "@/components/ui/table";
 import { formatarCurrency } from "@/lib/utils";
 import { Edit, PackagePlus, Trash } from "lucide-react";
+import { useProdutos } from "@/hooks/useProdutos";
 
 export default function Produtos() {
+  const { produtos, isLoading } = useProdutos();
+
+  if (isLoading) {
+    return <div>Carregando produtos...</div>;
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader 
@@ -41,7 +47,7 @@ export default function Produtos() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {produtosMock.map((produto) => (
+              {produtos?.map((produto) => (
                 <TableRow key={produto.id}>
                   <TableCell className="font-medium">{produto.nome}</TableCell>
                   <TableCell>{produto.descricao}</TableCell>

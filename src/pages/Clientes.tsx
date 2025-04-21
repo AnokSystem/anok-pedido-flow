@@ -1,7 +1,6 @@
 
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { clientesMock } from "@/lib/mockData";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
   Table, 
@@ -12,10 +11,16 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { formatarCpfCnpj } from "@/lib/utils";
-import { Link } from "react-router-dom";
-import { Edit, Plus, Trash, UserPlus } from "lucide-react";
+import { Edit, UserPlus, Trash } from "lucide-react";
+import { useClientes } from "@/hooks/useClientes";
 
 export default function Clientes() {
+  const { clientes, isLoading } = useClientes();
+
+  if (isLoading) {
+    return <div>Carregando clientes...</div>;
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader 
@@ -43,7 +48,7 @@ export default function Clientes() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {clientesMock.map((cliente) => (
+              {clientes?.map((cliente) => (
                 <TableRow key={cliente.id}>
                   <TableCell className="font-medium">{cliente.nome}</TableCell>
                   <TableCell>{formatarCpfCnpj(cliente.cpf_cnpj)}</TableCell>

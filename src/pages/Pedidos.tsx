@@ -1,7 +1,6 @@
 
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { pedidosMock } from "@/lib/mockData";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
   Table, 
@@ -12,9 +11,10 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { formatarCurrency, formatarData } from "@/lib/utils";
-import { Copy, Edit, FileText, FilePlus2, Printer, Trash } from "lucide-react";
+import { Copy, Edit, FilePlus2, Printer, Trash } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+import { usePedidos } from "@/hooks/usePedidos";
 
 const statusColors = {
   'Criado': 'bg-blue-100 text-blue-800 hover:bg-blue-200',
@@ -24,6 +24,12 @@ const statusColors = {
 };
 
 export default function Pedidos() {
+  const { pedidos, isLoading } = usePedidos();
+
+  if (isLoading) {
+    return <div>Carregando pedidos...</div>;
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader 
@@ -52,7 +58,7 @@ export default function Pedidos() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {pedidosMock.map((pedido) => (
+              {pedidos?.map((pedido) => (
                 <TableRow key={pedido.id}>
                   <TableCell className="font-medium">
                     <Link to={`/pedidos/${pedido.id}`} className="hover:text-anok-500 transition-colors">
@@ -61,7 +67,7 @@ export default function Pedidos() {
                   </TableCell>
                   <TableCell>{pedido.cliente?.nome}</TableCell>
                   <TableCell>{formatarData(pedido.data_emissao)}</TableCell>
-                  <TableCell>{formatarData(pedido.data_entrega)}</TableCell>
+                  <TableCell>{pedido.data_entrega ? formatarData(pedido.data_entrega) : '-'}</TableCell>
                   <TableCell>
                     <Badge 
                       variant="secondary" 
