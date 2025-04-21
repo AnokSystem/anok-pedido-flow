@@ -30,6 +30,7 @@ export function useProdutos() {
 
   const createProduto = useMutation({
     mutationFn: async (produto: Omit<Produto, 'id'>) => {
+      console.log('Criando produto:', produto);
       const { data, error } = await supabase
         .from('produtos')
         .insert(produto)
@@ -47,6 +48,7 @@ export function useProdutos() {
       });
     },
     onError: (error) => {
+      console.error('Erro ao criar produto:', error);
       toast({
         title: 'Erro ao criar produto',
         description: error.message,
@@ -57,6 +59,7 @@ export function useProdutos() {
 
   const updateProduto = useMutation({
     mutationFn: async (produto: Produto) => {
+      console.log('Atualizando produto:', produto);
       const { data, error } = await supabase
         .from('produtos')
         .update(produto)
@@ -75,6 +78,7 @@ export function useProdutos() {
       });
     },
     onError: (error) => {
+      console.error('Erro ao atualizar produto:', error);
       toast({
         title: 'Erro ao atualizar produto',
         description: error.message,
