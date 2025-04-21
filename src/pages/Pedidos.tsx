@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -54,9 +53,31 @@ export default function Pedidos() {
     setFormOpen(true);
   };
 
-  const handleOpenEditForm = (pedido: Pedido) => {
-    setSelectedPedido(pedido);
-    setFormOpen(true);
+  const handleOpenEditForm = async (pedido: Pedido) => {
+    try {
+      setIsLoading1(true);
+      // Buscar detalhes atualizados do pedido para edição
+      const pedidoDetalhado = await getPedidoById(pedido.id);
+      if (pedidoDetalhado) {
+        setSelectedPedido(pedidoDetalhado);
+        setFormOpen(true);
+      } else {
+        toast({
+          title: "Erro ao carregar pedido",
+          description: "Não foi possível carregar os detalhes do pedido para edição",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao carregar pedido para edição:", error);
+      toast({
+        title: "Erro ao carregar pedido",
+        description: "Não foi possível carregar os detalhes do pedido para edição",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading1(false);
+    }
   };
 
   const handleOpenVisualizacao = async (pedido: Pedido) => {
@@ -97,12 +118,13 @@ export default function Pedidos() {
     try {
       if (selectedPedido) {
         // Editar pedido existente
-        await updatePedido.mutateAsync({
+        const pedidoAtualizado = {
           ...selectedPedido,
           ...data,
-          // Manter os itens do pedido original
-          itens: selectedPedido.itens || []
-        });
+        };
+        
+        console.log('Enviando pedido para atualização:', pedidoAtualizado);
+        await updatePedido.mutateAsync(pedidoAtualizado);
       } else {
         // Adicionar novo pedido
         const novoPedido = {

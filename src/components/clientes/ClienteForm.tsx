@@ -47,14 +47,17 @@ export function ClienteForm({ open, onOpenChange, onSubmit, cliente, isLoading }
       contato: cliente?.contato || "",
       email: cliente?.email || "",
       responsavel: cliente?.responsavel || "",
-      desconto_especial: cliente?.desconto_especial !== undefined
-        ? cliente.desconto_especial.toString().replace('.', ',')
-        : "",
+      desconto_especial: cliente?.desconto_especial ? Number(cliente.desconto_especial) : 0,
     },
   });
 
   const handleSubmit = (data: ClienteFormData) => {
-    onSubmit(data);
+    const clienteData = {
+      ...data,
+      desconto_especial: data.desconto_especial ? Number(data.desconto_especial) : null,
+    };
+    
+    onSubmit(clienteData);
   };
 
   React.useEffect(() => {

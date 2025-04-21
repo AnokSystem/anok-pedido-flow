@@ -1,14 +1,15 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Pedido } from "@/types";
-import { formatarCurrency, formatarData } from "@/lib/utils";
+import { Pedido, Empresa } from "@/types";
+import { formatarCurrency, formatarData, formatarCpfCnpj } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Download, Printer } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { jsPDF } from "jspdf";
 import 'jspdf-autotable';
+import { supabase } from "@/integrations/supabase/client";
 
 interface PedidoVisualizacaoProps {
   open: boolean;
@@ -17,6 +18,37 @@ interface PedidoVisualizacaoProps {
 }
 
 export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisualizacaoProps) {
+  const [empresa, setEmpresa] = useState<Empresa | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  // Buscar informações da empresa
+  useEffect(() => {
+    if (open && pedido) {
+      fetchEmpresaInfo();
+    }
+  }, [open, pedido]);
+
+  const fetchEmpresaInfo = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('empresas')
+        .select('*')
+        .limit(1)
+        .single();
+
+      if (error) {
+        console.error('Erro ao carregar informações da empresa:', error);
+      } else {
+        setEmpresa(data as Empresa);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar informações da empresa:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (!pedido) return null;
 
   const handlePrint = () => {
@@ -27,39 +59,91 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
     try {
       const doc = new jsPDF();
       
+      // Add company logo if exists
+      if (empresa?.logo) {
+        try {
+          doc.addImage(empresa.logo, 'JPEG', 14, 10, 40, 20);
+        } catch (e) {
+          console.error('Erro ao adicionar logo:', e);
+        }
+      }
+      
+      // Add company info
+      doc.setFontSize(10);
+      if (empresa) {
+        doc.text(`${empresa.nome_empresa}`, 14, 35);
+        if (empresa.cnpj) doc.text(`CNPJ: ${formatarCpfCnpj(empresa.cnpj)}`, 14, 40);
+        if (empresa.endereco) doc.text(`Endereço: ${empresa.endereco}`, 14, 45);
+        if (empresa.contato) doc.text(`Contato: ${empresa.contato}`, 14, 50);
+      }
+      
       // Add title
-      doc.setFontSize(18);
-      doc.text(`Pedido: ${pedido.numero_pedido}`, 14, 22);
+      doc.setFontSize(16);
+      doc.text(`PEDIDO: ${pedido.numero_pedido}`, 14, 60);
       
       // Add customer info
-      doc.setFontSize(12);
-      doc.text(`Cliente: ${pedido.cliente?.nome || 'N/A'}`, 14, 32);
-      doc.text(`Data de Emissão: ${formatarData(pedido.data_emissao)}`, 14, 40);
-      doc.text(`Data de Entrega: ${pedido.data_entrega ? formatarData(pedido.data_entrega) : 'N/A'}`, 14, 48);
-      doc.text(`Status: ${pedido.status}`, 14, 56);
+      doc.setFontSize(11);
+      doc.text(`Cliente: ${pedido.cliente?.nome || 'N/A'}`, 14, 70);
+      if (pedido.cliente?.cpf_cnpj) {
+        doc.text(`CPF/CNPJ: ${formatarCpfCnpj(pedido.cliente.cpf_cnpj)}`, 14, 75);
+      }
+      if (pedido.cliente?.rua) {
+        const endereco = [
+          pedido.cliente.rua,
+          pedido.cliente.numero && `Nº ${pedido.cliente.numero}`,
+          pedido.cliente.bairro,
+          pedido.cliente.cidade
+        ].filter(Boolean).join(', ');
+        doc.text(`Endereço: ${endereco}`, 14, 80);
+      }
+      doc.text(`Data de Emissão: ${formatarData(pedido.data_emissao)}`, 14, 85);
+      if (pedido.data_entrega) {
+        doc.text(`Data de Entrega: ${formatarData(pedido.data_entrega)}`, 14, 90);
+      }
+      doc.text(`Status: ${pedido.status}`, 14, 95);
       
       // Add items table
-      const tableColumn = ["Item", "Quantidade", "Unidade", "Valor Unit.", "Total"];
-      const tableRows = pedido.itens.map(item => [
-        item.produto?.nome || item.descricao || 'N/A',
-        item.quantidade.toString(),
-        item.unidade,
-        formatarCurrency(item.valor_unit),
-        formatarCurrency(item.valor_total)
-      ]);
+      const tableColumn = ["Item", "Qtd", "Un", "Valor Unit.", "Total"];
+      const tableRows = pedido.itens.map(item => {
+        const itemDesc = item.produto?.nome || item.descricao || 'N/A';
+        let descricaoCompleta = itemDesc;
+        
+        if (item.largura && item.altura) {
+          descricaoCompleta = `${itemDesc} (${item.largura}x${item.altura})`;
+        }
+        
+        return [
+          descricaoCompleta,
+          item.quantidade.toString(),
+          item.unidade,
+          formatarCurrency(item.valor_unit),
+          formatarCurrency(item.valor_total)
+        ];
+      });
       
       // @ts-ignore - jspdf-autotable types
       doc.autoTable({
         head: [tableColumn],
         body: tableRows,
-        startY: 65,
+        startY: 105,
         theme: 'grid',
         styles: { fontSize: 10 }
       });
       
       // Add total
-      const finalY = (doc as any).lastAutoTable.finalY || 100;
-      doc.text(`Total do Pedido: ${formatarCurrency(pedido.total)}`, 14, finalY + 10);
+      const finalY = (doc as any).lastAutoTable.finalY || 150;
+      doc.setFontSize(12);
+      doc.text(`Total do Pedido: ${formatarCurrency(pedido.total)}`, 130, finalY + 10);
+      
+      // Add footer with company contact
+      doc.setFontSize(9);
+      const pageHeight = doc.internal.pageSize.height;
+      if (empresa) {
+        doc.text(`${empresa.nome_empresa} - ${empresa.contato || ''}`, 14, pageHeight - 10);
+        if (empresa.email) {
+          doc.text(`E-mail: ${empresa.email}`, 14, pageHeight - 6);
+        }
+      }
       
       // Save the PDF
       doc.save(`pedido_${pedido.numero_pedido}.pdf`);
@@ -98,6 +182,27 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
         </DialogHeader>
 
         <div className="space-y-4 print:p-6" id="pedido-para-impressao">
+          {/* Informações da empresa */}
+          {empresa && (
+            <Card className="border-none shadow-none print:mb-4">
+              <CardContent className="p-0">
+                <div className="flex flex-col items-center text-center mb-4">
+                  {empresa.logo && (
+                    <img 
+                      src={empresa.logo} 
+                      alt={empresa.nome_empresa} 
+                      className="max-h-16 mb-2" 
+                    />
+                  )}
+                  <h2 className="text-lg font-bold">{empresa.nome_empresa}</h2>
+                  {empresa.cnpj && <p className="text-sm">{formatarCpfCnpj(empresa.cnpj)}</p>}
+                  {empresa.endereco && <p className="text-sm">{empresa.endereco}</p>}
+                  {empresa.contato && <p className="text-sm">Contato: {empresa.contato}</p>}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Cabeçalho com informações do pedido */}
           <Card>
             <CardHeader>
@@ -106,6 +211,9 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <p><span className="font-medium">Cliente:</span> {pedido.cliente?.nome}</p>
+                {pedido.cliente?.cpf_cnpj && (
+                  <p><span className="font-medium">CPF/CNPJ:</span> {formatarCpfCnpj(pedido.cliente.cpf_cnpj)}</p>
+                )}
                 <p><span className="font-medium">Status:</span> {pedido.status}</p>
               </div>
               <div className="space-y-2">

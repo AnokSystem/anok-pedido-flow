@@ -106,18 +106,21 @@ export function usePedidos() {
     mutationFn: async (pedido: Omit<Pedido, 'id' | 'itens'> & { itens: Omit<ItemPedido, 'id' | 'pedido_id'>[] }) => {
       console.log('Criando pedido:', pedido);
       
+      // Preparar dados para inserção
+      const pedidoParaInserir = {
+        numero_pedido: pedido.numero_pedido,
+        cliente_id: pedido.cliente_id,
+        data_emissao: pedido.data_emissao instanceof Date ? pedido.data_emissao.toISOString() : pedido.data_emissao,
+        data_entrega: pedido.data_entrega instanceof Date ? pedido.data_entrega.toISOString() : pedido.data_entrega,
+        total: Number(pedido.total) || 0,
+        status: pedido.status
+      };
+      
       try {
         // Criar o pedido primeiro
         const { data: novoPedido, error: pedidoError } = await supabase
           .from('pedidos')
-          .insert({
-            numero_pedido: pedido.numero_pedido,
-            cliente_id: pedido.cliente_id,
-            data_emissao: pedido.data_emissao,
-            data_entrega: pedido.data_entrega,
-            total: pedido.total,
-            status: pedido.status
-          })
+          .insert(pedidoParaInserir)
           .select()
           .single();
 
@@ -130,7 +133,12 @@ export function usePedidos() {
         if (pedido.itens && pedido.itens.length > 0) {
           const itensComPedidoId = pedido.itens.map(item => ({
             ...item,
-            pedido_id: novoPedido.id
+            pedido_id: novoPedido.id,
+            quantidade: Number(item.quantidade),
+            valor_unit: Number(item.valor_unit),
+            valor_total: Number(item.valor_total),
+            largura: item.largura ? Number(item.largura) : null,
+            altura: item.altura ? Number(item.altura) : null
           }));
 
           const { error: itensError } = await supabase
@@ -170,18 +178,21 @@ export function usePedidos() {
     mutationFn: async (pedido: Pedido) => {
       console.log('Atualizando pedido:', pedido);
       
+      // Preparar dados para atualização
+      const pedidoParaAtualizar = {
+        numero_pedido: pedido.numero_pedido,
+        cliente_id: pedido.cliente_id,
+        data_emissao: pedido.data_emissao instanceof Date ? pedido.data_emissao.toISOString() : pedido.data_emissao,
+        data_entrega: pedido.data_entrega instanceof Date ? pedido.data_entrega.toISOString() : pedido.data_entrega,
+        total: Number(pedido.total) || 0,
+        status: pedido.status
+      };
+      
       try {
         // Atualizar o pedido
         const { data: pedidoAtualizado, error: pedidoError } = await supabase
           .from('pedidos')
-          .update({
-            numero_pedido: pedido.numero_pedido,
-            cliente_id: pedido.cliente_id,
-            data_emissao: pedido.data_emissao,
-            data_entrega: pedido.data_entrega,
-            total: pedido.total,
-            status: pedido.status
-          })
+          .update(pedidoParaAtualizar)
           .eq('id', pedido.id)
           .select()
           .single();
@@ -207,9 +218,15 @@ export function usePedidos() {
           // Adicionar os novos itens, se houver
           if (pedido.itens.length > 0) {
             const itensParaInserir = pedido.itens.map(item => ({
-              ...item,
-              id: undefined, // Remover ID para que novos sejam gerados
-              pedido_id: pedido.id
+              pedido_id: pedido.id,
+              produto_id: item.produto_id,
+              descricao: item.descricao,
+              quantidade: Number(item.quantidade),
+              unidade: item.unidade,
+              largura: item.largura ? Number(item.largura) : null,
+              altura: item.altura ? Number(item.altura) : null,
+              valor_unit: Number(item.valor_unit),
+              valor_total: Number(item.valor_total)
             }));
 
             const { error: insertError } = await supabase
@@ -246,11 +263,60 @@ export function usePedidos() {
     },
   });
 
+  const deletePedido = useMutation({
+    mutationFn: async (id: string) => {
+      try {
+        // Primeiro remover todos os itens do pedido
+        const { error: deleteItensError } = await supabase
+          .from('itens_pedido')
+          .delete()
+          .eq('pedido_id', id);
+
+        if (deleteItensError) {
+          console.error('Erro ao remover itens do pedido:', deleteItensError);
+          throw deleteItensError;
+        }
+
+        // Depois remover o pedido
+        const { error: deletePedidoError } = await supabase
+          .from('pedidos')
+          .delete()
+          .eq('id', id);
+
+        if (deletePedidoError) {
+          console.error('Erro ao remover pedido:', deletePedidoError);
+          throw deletePedidoError;
+        }
+
+        return id;
+      } catch (error) {
+        console.error('Erro ao excluir pedido:', error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pedidos'] });
+      toast({
+        title: 'Pedido excluído',
+        description: 'O pedido foi excluído com sucesso.',
+      });
+    },
+    onError: (error) => {
+      console.error('Erro ao excluir pedido:', error);
+      toast({
+        title: 'Erro ao excluir pedido',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   return {
     pedidos,
     isLoading,
     createPedido,
     updatePedido,
+    deletePedido,
     getPedidoById,
   };
 }
