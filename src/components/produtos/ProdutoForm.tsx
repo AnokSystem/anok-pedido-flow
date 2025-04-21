@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,7 +15,9 @@ const produtoSchema = z.object({
   unidade: z.enum(["un", "m²", "kg", "l"], {
     required_error: "Selecione uma unidade de medida",
   }),
-  preco_unitario: z.string().min(1, "Informe o preço unitário").transform(val => parseFloat(val)),
+  preco_unitario: z.string()
+    .min(1, "Informe o preço unitário")
+    .transform(val => parseFloat(val.replace(',', '.'))),
   descricao: z.string().optional(),
 });
 
@@ -38,7 +39,12 @@ export function ProdutoForm({ open, onOpenChange, onSubmit, produto, isLoading }
     defaultValues: {
       nome: produto?.nome || "",
       unidade: produto?.unidade || "un",
-      preco_unitario: produto?.preco_unitario ? String(produto.preco_unitario) : "",
+      preco_unitario: produto?.preco_unitario 
+        ? produto.preco_unitario.toLocaleString('pt-BR', { 
+            minimumFractionDigits: 2, 
+            maximumFractionDigits: 2 
+          }).replace('.', ',') 
+        : "",
       descricao: produto?.descricao || "",
     },
   });
