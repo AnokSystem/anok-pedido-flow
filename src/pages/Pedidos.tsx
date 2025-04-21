@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,13 +12,14 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { formatarCurrency, formatarData } from "@/lib/utils";
-import { Copy, Edit, FilePlus2, Printer, Trash } from "lucide-react";
+import { Copy, Edit, Eye, FilePlus2, Printer, Trash } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { usePedidos } from "@/hooks/usePedidos";
 import { PedidoForm } from "@/components/pedidos/PedidoForm";
 import { Pedido } from "@/types";
 import { toast } from "@/hooks/use-toast";
+import { PedidoVisualizacao } from "@/components/pedidos/PedidoVisualizacao";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -37,12 +39,15 @@ const statusColors = {
 };
 
 export default function Pedidos() {
-  const { pedidos, isLoading, createPedido, updatePedido } = usePedidos();
+  const { pedidos, isLoading, createPedido, updatePedido, getPedidoById } = usePedidos();
   
   const [formOpen, setFormOpen] = useState(false);
+  const [visualizacaoOpen, setVisualizacaoOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [selectedPedido, setSelectedPedido] = useState<Pedido | undefined>(undefined);
+  const [pedidoParaVisualizar, setPedidoParaVisualizar] = useState<Pedido | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading1, setIsLoading1] = useState(false);
 
   const handleOpenNewForm = () => {
     setSelectedPedido(undefined);
@@ -52,6 +57,33 @@ export default function Pedidos() {
   const handleOpenEditForm = (pedido: Pedido) => {
     setSelectedPedido(pedido);
     setFormOpen(true);
+  };
+
+  const handleOpenVisualizacao = async (pedido: Pedido) => {
+    try {
+      setIsLoading1(true);
+      // Buscar detalhes atualizados do pedido
+      const pedidoDetalhado = await getPedidoById(pedido.id);
+      if (pedidoDetalhado) {
+        setPedidoParaVisualizar(pedidoDetalhado);
+        setVisualizacaoOpen(true);
+      } else {
+        toast({
+          title: "Erro ao carregar pedido",
+          description: "Não foi possível carregar os detalhes do pedido",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao carregar pedido para visualização:", error);
+      toast({
+        title: "Erro ao carregar pedido",
+        description: "Não foi possível carregar os detalhes do pedido",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading1(false);
+    }
   };
 
   const handleOpenDeleteConfirm = (pedido: Pedido) => {
@@ -95,11 +127,31 @@ export default function Pedidos() {
     }
   };
 
-  const handleImprimir = (pedido: Pedido) => {
-    toast({
-      title: "Impressão não implementada",
-      description: "A impressão de pedidos será implementada em uma atualização futura",
-    });
+  const handleImprimir = async (pedido: Pedido) => {
+    try {
+      // Buscar detalhes atualizados do pedido
+      const pedidoDetalhado = await getPedidoById(pedido.id);
+      if (pedidoDetalhado) {
+        setPedidoParaVisualizar(pedidoDetalhado);
+        // Abrir visualização e imprimir após o componente ser montado
+        setVisualizacaoOpen(true);
+        setTimeout(() => {
+          window.print();
+        }, 500);
+      } else {
+        toast({
+          title: "Erro ao carregar pedido",
+          description: "Não foi possível carregar os detalhes do pedido para impressão",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Erro ao imprimir",
+        description: "Ocorreu um erro ao preparar o pedido para impressão",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleClonar = (pedido: Pedido) => {
@@ -163,9 +215,13 @@ export default function Pedidos() {
                 {pedidos?.map((pedido) => (
                   <TableRow key={pedido.id}>
                     <TableCell className="font-medium">
-                      <Link to={`/pedidos/${pedido.id}`} className="hover:text-anok-500 transition-colors">
+                      <Button
+                        variant="link"
+                        className="p-0 h-auto font-medium hover:text-anok-500"
+                        onClick={() => handleOpenVisualizacao(pedido)}
+                      >
                         {pedido.numero_pedido}
-                      </Link>
+                      </Button>
                     </TableCell>
                     <TableCell>{pedido.cliente?.nome}</TableCell>
                     <TableCell>{formatarData(pedido.data_emissao)}</TableCell>
@@ -183,6 +239,14 @@ export default function Pedidos() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          title="Visualizar"
+                          onClick={() => handleOpenVisualizacao(pedido)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
                         <Button 
                           variant="ghost" 
                           size="icon" 
@@ -231,6 +295,12 @@ export default function Pedidos() {
         onSubmit={handleSubmit}
         pedido={selectedPedido}
         isLoading={isSubmitting}
+      />
+
+      <PedidoVisualizacao
+        open={visualizacaoOpen}
+        onOpenChange={setVisualizacaoOpen}
+        pedido={pedidoParaVisualizar}
       />
 
       <AlertDialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>

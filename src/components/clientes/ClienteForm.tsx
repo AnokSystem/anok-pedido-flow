@@ -35,7 +35,7 @@ interface ClienteFormProps {
 export function ClienteForm({ open, onOpenChange, onSubmit, cliente, isLoading }: ClienteFormProps) {
   const editMode = !!cliente;
   
-  const form = useForm<ProdutoFormData>({
+  const form = useForm<ClienteFormData>({
     resolver: zodResolver(clienteSchema),
     defaultValues: {
       nome: cliente?.nome || "",
@@ -56,6 +56,38 @@ export function ClienteForm({ open, onOpenChange, onSubmit, cliente, isLoading }
   const handleSubmit = (data: ClienteFormData) => {
     onSubmit(data);
   };
+
+  React.useEffect(() => {
+    if (open && cliente) {
+      form.reset({
+        nome: cliente.nome,
+        cpf_cnpj: cliente.cpf_cnpj,
+        rua: cliente.rua || "",
+        numero: cliente.numero || "",
+        bairro: cliente.bairro || "",
+        cidade: cliente.cidade || "",
+        contato: cliente.contato || "",
+        email: cliente.email || "",
+        responsavel: cliente.responsavel || "",
+        desconto_especial: cliente.desconto_especial !== undefined
+          ? cliente.desconto_especial.toString().replace('.', ',')
+          : "",
+      });
+    } else if (open) {
+      form.reset({
+        nome: "",
+        cpf_cnpj: "",
+        rua: "",
+        numero: "",
+        bairro: "",
+        cidade: "",
+        contato: "",
+        email: "",
+        responsavel: "",
+        desconto_especial: "",
+      });
+    }
+  }, [open, cliente, form]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

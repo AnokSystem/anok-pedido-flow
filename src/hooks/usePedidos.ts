@@ -58,6 +58,50 @@ export function usePedidos() {
     },
   });
 
+  const getPedidoById = async (id: string): Promise<Pedido | null> => {
+    try {
+      // Buscar o pedido com informações do cliente
+      const { data: pedidoData, error: pedidoError } = await supabase
+        .from('pedidos')
+        .select(`
+          *,
+          cliente:clientes(*)
+        `)
+        .eq('id', id)
+        .single();
+
+      if (pedidoError) {
+        console.error('Erro ao carregar pedido:', pedidoError);
+        return null;
+      }
+
+      // Buscar os itens do pedido
+      const { data: itensData, error: itensError } = await supabase
+        .from('itens_pedido')
+        .select(`
+          *,
+          produto:produtos(*)
+        `)
+        .eq('pedido_id', id);
+
+      if (itensError) {
+        console.error('Erro ao carregar itens do pedido:', itensError);
+        return {
+          ...pedidoData,
+          itens: []
+        } as Pedido;
+      }
+
+      return {
+        ...pedidoData,
+        itens: itensData
+      } as Pedido;
+    } catch (error) {
+      console.error('Erro ao buscar pedido:', error);
+      return null;
+    }
+  };
+
   const createPedido = useMutation({
     mutationFn: async (pedido: Omit<Pedido, 'id' | 'itens'> & { itens: Omit<ItemPedido, 'id' | 'pedido_id'>[] }) => {
       console.log('Criando pedido:', pedido);
@@ -207,5 +251,6 @@ export function usePedidos() {
     isLoading,
     createPedido,
     updatePedido,
+    getPedidoById,
   };
 }

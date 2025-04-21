@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -57,7 +57,7 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
   const form = useForm<PedidoFormData>({
     resolver: zodResolver(pedidoSchema),
     defaultValues: {
-      numero_pedido: pedido?.numero_pedido || numeroPedidoGerado,
+      numero_pedido: pedido?.numero_pedido || "",
       cliente_id: pedido?.cliente_id || "",
       data_emissao: pedido?.data_emissao ? new Date(pedido.data_emissao) : new Date(),
       data_entrega: pedido?.data_entrega ? new Date(pedido.data_entrega) : undefined,
@@ -65,12 +65,37 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
     },
   });
 
+  // Reset form values when pedido changes
+  useEffect(() => {
+    if (open) {
+      if (editMode && pedido) {
+        // In edit mode, load existing pedido data
+        form.reset({
+          numero_pedido: pedido.numero_pedido,
+          cliente_id: pedido.cliente_id,
+          data_emissao: pedido.data_emissao ? new Date(pedido.data_emissao) : new Date(),
+          data_entrega: pedido.data_entrega ? new Date(pedido.data_entrega) : undefined,
+          status: pedido.status,
+        });
+      } else {
+        // In creation mode, reset to defaults with generated number
+        form.reset({
+          numero_pedido: numeroPedidoGerado,
+          cliente_id: "",
+          data_emissao: new Date(),
+          data_entrega: undefined,
+          status: "Criado",
+        });
+      }
+    }
+  }, [open, editMode, pedido, form, numeroPedidoGerado]);
+
   // Atualiza o valor do formulário quando o número do pedido é gerado
   useEffect(() => {
-    if (numeroPedidoGerado && !editMode) {
+    if (numeroPedidoGerado && !editMode && open) {
       form.setValue("numero_pedido", numeroPedidoGerado);
     }
-  }, [numeroPedidoGerado, form, editMode]);
+  }, [numeroPedidoGerado, form, editMode, open]);
 
   const handleSubmit = (data: PedidoFormData) => {
     onSubmit(data);
@@ -81,6 +106,9 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{editMode ? "Editar Pedido" : "Novo Pedido"}</DialogTitle>
+          <DialogDescription>
+            {editMode ? "Atualize as informações do pedido" : "Preencha as informações para criar um novo pedido"}
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -110,7 +138,7 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Cliente</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione um cliente" />
@@ -219,7 +247,7 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Status</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione um status" />
