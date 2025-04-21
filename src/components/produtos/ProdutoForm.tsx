@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -39,7 +40,7 @@ export function ProdutoForm({ open, onOpenChange, onSubmit, produto, isLoading }
     defaultValues: {
       nome: produto?.nome || "",
       unidade: produto?.unidade || "un",
-      preco_unitario: produto?.preco_unitario ? Number(produto.preco_unitario) : 0,
+      preco_unitario: produto?.preco_unitario ? String(produto.preco_unitario) : "",
       descricao: produto?.descricao || "",
     },
   });

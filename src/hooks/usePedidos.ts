@@ -110,8 +110,10 @@ export function usePedidos() {
       const pedidoParaInserir = {
         numero_pedido: pedido.numero_pedido,
         cliente_id: pedido.cliente_id,
-        data_emissao: pedido.data_emissao instanceof Date ? pedido.data_emissao.toISOString() : pedido.data_emissao,
-        data_entrega: pedido.data_entrega instanceof Date ? pedido.data_entrega.toISOString() : pedido.data_entrega,
+        data_emissao: typeof pedido.data_emissao === 'object' && pedido.data_emissao !== null ? 
+          new Date(pedido.data_emissao as any).toISOString() : pedido.data_emissao,
+        data_entrega: pedido.data_entrega && typeof pedido.data_entrega === 'object' ? 
+          new Date(pedido.data_entrega as any).toISOString() : pedido.data_entrega,
         total: Number(pedido.total) || 0,
         status: pedido.status
       };
@@ -182,8 +184,10 @@ export function usePedidos() {
       const pedidoParaAtualizar = {
         numero_pedido: pedido.numero_pedido,
         cliente_id: pedido.cliente_id,
-        data_emissao: pedido.data_emissao instanceof Date ? pedido.data_emissao.toISOString() : pedido.data_emissao,
-        data_entrega: pedido.data_entrega instanceof Date ? pedido.data_entrega.toISOString() : pedido.data_entrega,
+        data_emissao: typeof pedido.data_emissao === 'object' && pedido.data_emissao !== null ? 
+          new Date(pedido.data_emissao as any).toISOString() : pedido.data_emissao,
+        data_entrega: pedido.data_entrega && typeof pedido.data_entrega === 'object' ? 
+          new Date(pedido.data_entrega as any).toISOString() : pedido.data_entrega,
         total: Number(pedido.total) || 0,
         status: pedido.status
       };

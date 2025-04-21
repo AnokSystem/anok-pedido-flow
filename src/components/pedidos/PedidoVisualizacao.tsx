@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Pedido, Empresa } from "@/types";
 import { formatarCurrency, formatarData, formatarCpfCnpj } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Download, Printer } from "lucide-react";
+import { Download, Printer, FileText } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { jsPDF } from "jspdf";
 import 'jspdf-autotable';
@@ -75,32 +75,30 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
         if (empresa.cnpj) doc.text(`CNPJ: ${formatarCpfCnpj(empresa.cnpj)}`, 14, 40);
         if (empresa.endereco) doc.text(`Endereço: ${empresa.endereco}`, 14, 45);
         if (empresa.contato) doc.text(`Contato: ${empresa.contato}`, 14, 50);
+        if (empresa.email) doc.text(`Email: ${empresa.email}`, 14, 55);
       }
       
       // Add title
       doc.setFontSize(16);
-      doc.text(`PEDIDO: ${pedido.numero_pedido}`, 14, 60);
+      doc.text(`PEDIDO: ${pedido.numero_pedido}`, 14, 65);
       
       // Add customer info
       doc.setFontSize(11);
-      doc.text(`Cliente: ${pedido.cliente?.nome || 'N/A'}`, 14, 70);
+      doc.text(`Cliente: ${pedido.cliente?.nome || 'N/A'}`, 14, 75);
       if (pedido.cliente?.cpf_cnpj) {
-        doc.text(`CPF/CNPJ: ${formatarCpfCnpj(pedido.cliente.cpf_cnpj)}`, 14, 75);
+        doc.text(`CPF/CNPJ: ${formatarCpfCnpj(pedido.cliente.cpf_cnpj)}`, 14, 80);
       }
-      if (pedido.cliente?.rua) {
-        const endereco = [
-          pedido.cliente.rua,
-          pedido.cliente.numero && `Nº ${pedido.cliente.numero}`,
-          pedido.cliente.bairro,
-          pedido.cliente.cidade
-        ].filter(Boolean).join(', ');
-        doc.text(`Endereço: ${endereco}`, 14, 80);
+      if (pedido.cliente?.contato) {
+        doc.text(`Contato: ${pedido.cliente.contato}`, 14, 85);
       }
-      doc.text(`Data de Emissão: ${formatarData(pedido.data_emissao)}`, 14, 85);
+      if (pedido.cliente?.email) {
+        doc.text(`Email: ${pedido.cliente.email}`, 14, 90);
+      }
+      doc.text(`Data de Emissão: ${formatarData(pedido.data_emissao)}`, 14, 95);
       if (pedido.data_entrega) {
-        doc.text(`Data de Entrega: ${formatarData(pedido.data_entrega)}`, 14, 90);
+        doc.text(`Data de Entrega: ${formatarData(pedido.data_entrega)}`, 14, 100);
       }
-      doc.text(`Status: ${pedido.status}`, 14, 95);
+      doc.text(`Status: ${pedido.status}`, 14, 105);
       
       // Add items table
       const tableColumn = ["Item", "Qtd", "Un", "Valor Unit.", "Total"];
@@ -125,7 +123,7 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
       doc.autoTable({
         head: [tableColumn],
         body: tableRows,
-        startY: 105,
+        startY: 115,
         theme: 'grid',
         styles: { fontSize: 10 }
       });
@@ -135,14 +133,26 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
       doc.setFontSize(12);
       doc.text(`Total do Pedido: ${formatarCurrency(pedido.total)}`, 130, finalY + 10);
       
+      // Add signature fields
+      doc.setFontSize(10);
+      doc.text("_________________________________", 30, finalY + 40);
+      doc.text("Assinatura do Vendedor", 40, finalY + 45);
+      
+      doc.text("_________________________________", 130, finalY + 40);
+      doc.text("Assinatura do Cliente", 140, finalY + 45);
+      
       // Add footer with company contact
       doc.setFontSize(9);
       const pageHeight = doc.internal.pageSize.height;
       if (empresa) {
-        doc.text(`${empresa.nome_empresa} - ${empresa.contato || ''}`, 14, pageHeight - 10);
-        if (empresa.email) {
-          doc.text(`E-mail: ${empresa.email}`, 14, pageHeight - 6);
-        }
+        const footerText = [
+          empresa.nome_empresa,
+          empresa.contato ? `Tel: ${empresa.contato}` : '',
+          empresa.email ? `Email: ${empresa.email}` : '',
+          empresa.cnpj ? `CNPJ: ${formatarCpfCnpj(empresa.cnpj)}` : ''
+        ].filter(Boolean).join(' - ');
+        
+        doc.text(footerText, 14, pageHeight - 10, { maxWidth: 180 });
       }
       
       // Save the PDF
@@ -198,6 +208,7 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
                   {empresa.cnpj && <p className="text-sm">{formatarCpfCnpj(empresa.cnpj)}</p>}
                   {empresa.endereco && <p className="text-sm">{empresa.endereco}</p>}
                   {empresa.contato && <p className="text-sm">Contato: {empresa.contato}</p>}
+                  {empresa.email && <p className="text-sm">Email: {empresa.email}</p>}
                 </div>
               </CardContent>
             </Card>
@@ -213,6 +224,12 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
                 <p><span className="font-medium">Cliente:</span> {pedido.cliente?.nome}</p>
                 {pedido.cliente?.cpf_cnpj && (
                   <p><span className="font-medium">CPF/CNPJ:</span> {formatarCpfCnpj(pedido.cliente.cpf_cnpj)}</p>
+                )}
+                {pedido.cliente?.contato && (
+                  <p><span className="font-medium">Contato:</span> {pedido.cliente.contato}</p>
+                )}
+                {pedido.cliente?.email && (
+                  <p><span className="font-medium">Email:</span> {pedido.cliente.email}</p>
                 )}
                 <p><span className="font-medium">Status:</span> {pedido.status}</p>
               </div>
@@ -288,27 +305,23 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
             </CardContent>
           </Card>
 
-          {/* Endereço de entrega */}
-          {pedido.cliente && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Endereço de Entrega</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>
-                  {[
-                    pedido.cliente.rua,
-                    pedido.cliente.numero && `Nº ${pedido.cliente.numero}`,
-                    pedido.cliente.bairro,
-                    pedido.cliente.cidade
-                  ].filter(Boolean).join(', ')}
-                </p>
-                <p className="mt-2">
-                  <span className="font-medium">Contato:</span> {pedido.cliente.contato || '-'}
-                </p>
-              </CardContent>
-            </Card>
-          )}
+          {/* Espaço para assinaturas */}
+          <Card className="print:mb-0 print:mt-8">
+            <CardContent className="p-4 pt-6">
+              <div className="flex flex-col md:flex-row justify-between items-center gap-8 mt-4">
+                <div className="text-center w-full">
+                  <div className="border-t border-gray-300 pt-2 w-full">
+                    <p className="text-sm text-gray-600">Assinatura do Vendedor</p>
+                  </div>
+                </div>
+                <div className="text-center w-full">
+                  <div className="border-t border-gray-300 pt-2 w-full">
+                    <p className="text-sm text-gray-600">Assinatura do Cliente</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <DialogFooter>
