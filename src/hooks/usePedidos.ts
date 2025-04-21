@@ -60,38 +60,50 @@ export function usePedidos() {
 
   const createPedido = useMutation({
     mutationFn: async (pedido: Omit<Pedido, 'id' | 'itens'> & { itens: Omit<ItemPedido, 'id' | 'pedido_id'>[] }) => {
-      // Criar o pedido primeiro
-      const { data: novoPedido, error: pedidoError } = await supabase
-        .from('pedidos')
-        .insert({
-          numero_pedido: pedido.numero_pedido,
-          cliente_id: pedido.cliente_id,
-          empresa_id: pedido.empresa_id,
-          data_emissao: pedido.data_emissao,
-          data_entrega: pedido.data_entrega,
-          total: pedido.total,
-          status: pedido.status
-        })
-        .select()
-        .single();
+      console.log('Criando pedido:', pedido);
+      
+      try {
+        // Criar o pedido primeiro
+        const { data: novoPedido, error: pedidoError } = await supabase
+          .from('pedidos')
+          .insert({
+            numero_pedido: pedido.numero_pedido,
+            cliente_id: pedido.cliente_id,
+            data_emissao: pedido.data_emissao,
+            data_entrega: pedido.data_entrega,
+            total: pedido.total,
+            status: pedido.status
+          })
+          .select()
+          .single();
 
-      if (pedidoError) throw pedidoError;
+        if (pedidoError) {
+          console.error('Erro ao criar pedido:', pedidoError);
+          throw pedidoError;
+        }
 
-      // Adicionar os itens do pedido
-      if (pedido.itens && pedido.itens.length > 0) {
-        const itensComPedidoId = pedido.itens.map(item => ({
-          ...item,
-          pedido_id: novoPedido.id
-        }));
+        // Adicionar os itens do pedido
+        if (pedido.itens && pedido.itens.length > 0) {
+          const itensComPedidoId = pedido.itens.map(item => ({
+            ...item,
+            pedido_id: novoPedido.id
+          }));
 
-        const { error: itensError } = await supabase
-          .from('itens_pedido')
-          .insert(itensComPedidoId);
+          const { error: itensError } = await supabase
+            .from('itens_pedido')
+            .insert(itensComPedidoId);
 
-        if (itensError) throw itensError;
+          if (itensError) {
+            console.error('Erro ao adicionar itens do pedido:', itensError);
+            throw itensError;
+          }
+        }
+
+        return novoPedido;
+      } catch (error) {
+        console.error('Erro ao criar pedido:', error);
+        throw error;
       }
-
-      return novoPedido;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pedidos'] });
@@ -101,6 +113,7 @@ export function usePedidos() {
       });
     },
     onError: (error) => {
+      console.error('Erro ao criar pedido:', error);
       toast({
         title: 'Erro ao criar pedido',
         description: error.message,
@@ -111,50 +124,66 @@ export function usePedidos() {
 
   const updatePedido = useMutation({
     mutationFn: async (pedido: Pedido) => {
-      // Atualizar o pedido
-      const { data: pedidoAtualizado, error: pedidoError } = await supabase
-        .from('pedidos')
-        .update({
-          numero_pedido: pedido.numero_pedido,
-          cliente_id: pedido.cliente_id,
-          data_emissao: pedido.data_emissao,
-          data_entrega: pedido.data_entrega,
-          total: pedido.total,
-          status: pedido.status
-        })
-        .eq('id', pedido.id)
-        .select()
-        .single();
+      console.log('Atualizando pedido:', pedido);
+      
+      try {
+        // Atualizar o pedido
+        const { data: pedidoAtualizado, error: pedidoError } = await supabase
+          .from('pedidos')
+          .update({
+            numero_pedido: pedido.numero_pedido,
+            cliente_id: pedido.cliente_id,
+            data_emissao: pedido.data_emissao,
+            data_entrega: pedido.data_entrega,
+            total: pedido.total,
+            status: pedido.status
+          })
+          .eq('id', pedido.id)
+          .select()
+          .single();
 
-      if (pedidoError) throw pedidoError;
-
-      // Remover itens existentes e adicionar os novos
-      if (pedido.itens) {
-        // Primeiro remover todos os itens existentes
-        const { error: deleteError } = await supabase
-          .from('itens_pedido')
-          .delete()
-          .eq('pedido_id', pedido.id);
-
-        if (deleteError) throw deleteError;
-
-        // Adicionar os novos itens, se houver
-        if (pedido.itens.length > 0) {
-          const itensParaInserir = pedido.itens.map(item => ({
-            ...item,
-            id: undefined, // Remover ID para que novos sejam gerados
-            pedido_id: pedido.id
-          }));
-
-          const { error: insertError } = await supabase
-            .from('itens_pedido')
-            .insert(itensParaInserir);
-
-          if (insertError) throw insertError;
+        if (pedidoError) {
+          console.error('Erro ao atualizar pedido:', pedidoError);
+          throw pedidoError;
         }
-      }
 
-      return pedidoAtualizado;
+        // Remover itens existentes e adicionar os novos
+        if (pedido.itens) {
+          // Primeiro remover todos os itens existentes
+          const { error: deleteError } = await supabase
+            .from('itens_pedido')
+            .delete()
+            .eq('pedido_id', pedido.id);
+
+          if (deleteError) {
+            console.error('Erro ao remover itens existentes:', deleteError);
+            throw deleteError;
+          }
+
+          // Adicionar os novos itens, se houver
+          if (pedido.itens.length > 0) {
+            const itensParaInserir = pedido.itens.map(item => ({
+              ...item,
+              id: undefined, // Remover ID para que novos sejam gerados
+              pedido_id: pedido.id
+            }));
+
+            const { error: insertError } = await supabase
+              .from('itens_pedido')
+              .insert(itensParaInserir);
+
+            if (insertError) {
+              console.error('Erro ao inserir novos itens:', insertError);
+              throw insertError;
+            }
+          }
+        }
+
+        return pedidoAtualizado;
+      } catch (error) {
+        console.error('Erro ao atualizar pedido:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pedidos'] });
@@ -164,6 +193,7 @@ export function usePedidos() {
       });
     },
     onError: (error) => {
+      console.error('Erro ao atualizar pedido:', error);
       toast({
         title: 'Erro ao atualizar pedido',
         description: error.message,

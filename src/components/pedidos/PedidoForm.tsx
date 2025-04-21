@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -15,6 +15,8 @@ import { CalendarIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { usePedidos } from "@/hooks/usePedidos";
+import { gerarNumeroSequencial } from "@/lib/utils";
 
 const statusOptions = ["Criado", "Em Produção", "Pronto", "Entregue"];
 
@@ -38,18 +40,37 @@ interface PedidoFormProps {
 
 export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: PedidoFormProps) {
   const { clientes, isLoading: clientesLoading } = useClientes();
+  const { pedidos } = usePedidos();
+  const [numeroPedidoGerado, setNumeroPedidoGerado] = useState("");
   const editMode = !!pedido;
+  
+  // Gera um número de pedido automático quando abrir o form para novo pedido
+  useEffect(() => {
+    if (open && !editMode) {
+      // Conta quantos pedidos já existem e adiciona 1
+      const proximoNumero = (pedidos?.length || 0) + 1;
+      const novoNumeroPedido = gerarNumeroSequencial("PED", proximoNumero);
+      setNumeroPedidoGerado(novoNumeroPedido);
+    }
+  }, [open, editMode, pedidos]);
   
   const form = useForm<PedidoFormData>({
     resolver: zodResolver(pedidoSchema),
     defaultValues: {
-      numero_pedido: pedido?.numero_pedido || "",
+      numero_pedido: pedido?.numero_pedido || numeroPedidoGerado,
       cliente_id: pedido?.cliente_id || "",
       data_emissao: pedido?.data_emissao ? new Date(pedido.data_emissao) : new Date(),
       data_entrega: pedido?.data_entrega ? new Date(pedido.data_entrega) : undefined,
       status: pedido?.status || "Criado",
     },
   });
+
+  // Atualiza o valor do formulário quando o número do pedido é gerado
+  useEffect(() => {
+    if (numeroPedidoGerado && !editMode) {
+      form.setValue("numero_pedido", numeroPedidoGerado);
+    }
+  }, [numeroPedidoGerado, form, editMode]);
 
   const handleSubmit = (data: PedidoFormData) => {
     onSubmit(data);
@@ -71,7 +92,12 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
                 <FormItem>
                   <FormLabel>Número do Pedido</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ex: PED-0001" {...field} />
+                    <Input 
+                      placeholder="Ex: PED-0001" 
+                      {...field} 
+                      readOnly={!editMode} // Somente leitura em criação, editável em atualização
+                      className={!editMode ? "bg-gray-100" : ""}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -61,27 +60,20 @@ export default function Clientes() {
           ...selectedCliente,
           ...data
         });
-        toast({
-          title: "Cliente atualizado",
-          description: "O cliente foi atualizado com sucesso",
-        });
       } else {
         // Adicionar novo cliente
-        await createCliente.mutateAsync({
-          ...data,
-          empresa_id: "empresa-default-id" // Este valor deve ser obtido do contexto da aplicação
-        });
-        toast({
-          title: "Cliente criado",
-          description: "O cliente foi criado com sucesso",
-        });
+        const novoCliente = {
+          ...data
+        };
+        
+        await createCliente.mutateAsync(novoCliente);
       }
       setFormOpen(false);
     } catch (error) {
       console.error("Erro ao salvar cliente:", error);
       toast({
         title: "Erro",
-        description: "Ocorreu um erro ao salvar o cliente",
+        description: "Ocorreu um erro ao salvar o cliente: " + (error instanceof Error ? error.message : String(error)),
         variant: "destructive",
       });
     } finally {

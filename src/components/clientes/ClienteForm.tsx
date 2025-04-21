@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -36,7 +35,7 @@ interface ClienteFormProps {
 export function ClienteForm({ open, onOpenChange, onSubmit, cliente, isLoading }: ClienteFormProps) {
   const editMode = !!cliente;
   
-  const form = useForm<ClienteFormData>({
+  const form = useForm<ProdutoFormData>({
     resolver: zodResolver(clienteSchema),
     defaultValues: {
       nome: cliente?.nome || "",

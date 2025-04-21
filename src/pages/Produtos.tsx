@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -53,6 +52,7 @@ export default function Produtos() {
 
   const handleSubmit = async (data: any) => {
     setIsSubmitting(true);
+    console.log('Criando produto:', data);
     
     try {
       if (selectedProduto) {
@@ -61,27 +61,20 @@ export default function Produtos() {
           ...selectedProduto,
           ...data
         });
-        toast({
-          title: "Produto atualizado",
-          description: "O produto foi atualizado com sucesso",
-        });
       } else {
         // Adicionar novo produto
-        await createProduto.mutateAsync({
-          ...data,
-          empresa_id: "empresa-default-id" // Este valor deve ser obtido do contexto da aplicação
-        });
-        toast({
-          title: "Produto criado",
-          description: "O produto foi criado com sucesso",
-        });
+        const novoProduto = {
+          ...data
+        };
+        
+        await createProduto.mutateAsync(novoProduto);
       }
       setFormOpen(false);
     } catch (error) {
       console.error("Erro ao salvar produto:", error);
       toast({
         title: "Erro",
-        description: "Ocorreu um erro ao salvar o produto",
+        description: "Ocorreu um erro ao salvar o produto: " + (error instanceof Error ? error.message : String(error)),
         variant: "destructive",
       });
     } finally {

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -72,29 +71,23 @@ export default function Pedidos() {
           // Manter os itens do pedido original
           itens: selectedPedido.itens || []
         });
-        toast({
-          title: "Pedido atualizado",
-          description: "O pedido foi atualizado com sucesso",
-        });
       } else {
         // Adicionar novo pedido
-        await createPedido.mutateAsync({
+        const novoPedido = {
           ...data,
-          empresa_id: "empresa-default-id", // Este valor deve ser obtido do contexto da aplicação
           total: 0, // Valor inicial, será atualizado ao adicionar itens
           itens: [] // Itens serão adicionados em etapa posterior
-        });
-        toast({
-          title: "Pedido criado",
-          description: "O pedido foi criado com sucesso",
-        });
+        };
+        
+        console.log('Enviando pedido para criação:', novoPedido);
+        await createPedido.mutateAsync(novoPedido);
       }
       setFormOpen(false);
     } catch (error) {
       console.error("Erro ao salvar pedido:", error);
       toast({
         title: "Erro",
-        description: "Ocorreu um erro ao salvar o pedido",
+        description: "Ocorreu um erro ao salvar o pedido: " + (error instanceof Error ? error.message : String(error)),
         variant: "destructive",
       });
     } finally {
@@ -232,7 +225,6 @@ export default function Pedidos() {
         </CardContent>
       </Card>
 
-      {/* Formulário de pedido (novo/editar) */}
       <PedidoForm
         open={formOpen}
         onOpenChange={setFormOpen}
@@ -241,7 +233,6 @@ export default function Pedidos() {
         isLoading={isSubmitting}
       />
 
-      {/* Confirmação de exclusão */}
       <AlertDialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
