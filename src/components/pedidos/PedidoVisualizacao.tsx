@@ -11,6 +11,16 @@ import { jsPDF } from "jspdf";
 import 'jspdf-autotable';
 import { supabase } from "@/integrations/supabase/client";
 
+// Need to add the autoTable to jsPDF prototype
+import { autoTable } from 'jspdf-autotable';
+
+// Add type augmentation
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: typeof autoTable;
+  }
+}
+
 interface PedidoVisualizacaoProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -27,6 +37,56 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
       fetchEmpresaInfo();
     }
   }, [open, pedido]);
+
+  // Add print-specific styles when component mounts
+  useEffect(() => {
+    // Add print styles
+    const style = document.createElement('style');
+    style.id = 'print-styles';
+    style.innerHTML = `
+      @media print {
+        body * {
+          visibility: hidden;
+        }
+        #pedido-para-impressao, #pedido-para-impressao * {
+          visibility: visible;
+        }
+        #pedido-para-impressao {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+          padding: 20px;
+        }
+        .no-print {
+          display: none !important;
+        }
+        .print-full-width {
+          width: 100% !important;
+        }
+        .card {
+          border: none !important;
+          box-shadow: none !important;
+          margin-bottom: 20px !important;
+        }
+        .print-mb-4 {
+          margin-bottom: 1rem !important;
+        }
+        .print-mt-8 {
+          margin-top: 2rem !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+    // Cleanup
+    return () => {
+      const printStyles = document.getElementById('print-styles');
+      if (printStyles) {
+        printStyles.remove();
+      }
+    };
+  }, []);
 
   const fetchEmpresaInfo = async () => {
     try {
@@ -101,25 +161,21 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
       doc.text(`Status: ${pedido.status}`, 14, 105);
       
       // Add items table
-      const tableColumn = ["Item", "Qtd", "Un", "Valor Unit.", "Total"];
+      const tableColumn = ["Item", "Qtd", "Un", "Dimensões", "Valor Unit.", "Total"];
       const tableRows = pedido.itens.map(item => {
         const itemDesc = item.produto?.nome || item.descricao || 'N/A';
-        let descricaoCompleta = itemDesc;
-        
-        if (item.largura && item.altura) {
-          descricaoCompleta = `${itemDesc} (${item.largura}x${item.altura})`;
-        }
         
         return [
-          descricaoCompleta,
+          itemDesc,
           item.quantidade.toString(),
           item.unidade,
+          item.largura && item.altura ? `${item.largura}x${item.altura}` : '-',
           formatarCurrency(item.valor_unit),
           formatarCurrency(item.valor_total)
         ];
       });
       
-      // @ts-ignore - jspdf-autotable types
+      // Use autoTable properly
       doc.autoTable({
         head: [tableColumn],
         body: tableRows,
@@ -129,7 +185,7 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
       });
       
       // Add total
-      const finalY = (doc as any).lastAutoTable.finalY || 150;
+      const finalY = doc.lastAutoTable.finalY || 150;
       doc.setFontSize(12);
       doc.text(`Total do Pedido: ${formatarCurrency(pedido.total)}`, 130, finalY + 10);
       
@@ -178,7 +234,7 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
         <DialogHeader>
           <DialogTitle className="flex justify-between items-center">
             <span>Pedido: {pedido.numero_pedido}</span>
-            <div className="flex space-x-2">
+            <div className="flex space-x-2 no-print">
               <Button variant="outline" size="sm" onClick={handlePrint}>
                 <Printer className="h-4 w-4 mr-2" />
                 Imprimir
@@ -194,14 +250,14 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
         <div className="space-y-4 print:p-6" id="pedido-para-impressao">
           {/* Informações da empresa */}
           {empresa && (
-            <Card className="border-none shadow-none print:mb-4">
+            <Card className="border-none shadow-none print-mb-4">
               <CardContent className="p-0">
                 <div className="flex flex-col items-center text-center mb-4">
                   {empresa.logo && (
                     <img 
                       src={empresa.logo} 
                       alt={empresa.nome_empresa} 
-                      className="max-h-16 mb-2" 
+                      className="max-h-20 mb-2" 
                     />
                   )}
                   <h2 className="text-lg font-bold">{empresa.nome_empresa}</h2>
@@ -215,7 +271,7 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
           )}
 
           {/* Cabeçalho com informações do pedido */}
-          <Card>
+          <Card className="print-full-width">
             <CardHeader>
               <CardTitle>Informações do Pedido</CardTitle>
             </CardHeader>
@@ -243,7 +299,7 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
           </Card>
 
           {/* Tabela de itens do pedido */}
-          <Card>
+          <Card className="print-full-width">
             <CardHeader>
               <CardTitle>Itens do Pedido</CardTitle>
             </CardHeader>
@@ -306,7 +362,7 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
           </Card>
 
           {/* Espaço para assinaturas */}
-          <Card className="print:mb-0 print:mt-8">
+          <Card className="print-mb-0 print-mt-8 border-none shadow-none">
             <CardContent className="p-4 pt-6">
               <div className="flex flex-col md:flex-row justify-between items-center gap-8 mt-4">
                 <div className="text-center w-full">
@@ -324,7 +380,7 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
           </Card>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="no-print">
           <Button onClick={() => onOpenChange(false)}>Fechar</Button>
         </DialogFooter>
       </DialogContent>
