@@ -12,9 +12,13 @@ import { Cliente } from "@/types";
 const clienteSchema = z.object({
   nome: z.string().min(1, "O nome é obrigatório"),
   cpf_cnpj: z.string().min(1, "CPF/CNPJ é obrigatório"),
+  rua: z.string().optional(),
+  numero: z.string().optional(),
+  bairro: z.string().optional(),
+  cidade: z.string().optional(),
   contato: z.string().optional(),
   email: z.string().email("Digite um e-mail válido").optional().or(z.literal('')),
-  endereco: z.string().optional(),
+  responsavel: z.string().optional(),
   desconto_especial: z.string().optional()
     .transform(val => val ? parseFloat(val.replace(',', '.')) : null),
 });
@@ -37,9 +41,13 @@ export function ClienteForm({ open, onOpenChange, onSubmit, cliente, isLoading }
     defaultValues: {
       nome: cliente?.nome || "",
       cpf_cnpj: cliente?.cpf_cnpj || "",
+      rua: cliente?.rua || "",
+      numero: cliente?.numero || "",
+      bairro: cliente?.bairro || "",
+      cidade: cliente?.cidade || "",
       contato: cliente?.contato || "",
       email: cliente?.email || "",
-      endereco: cliente?.endereco || "",
+      responsavel: cliente?.responsavel || "",
       desconto_especial: cliente?.desconto_especial ? 
         cliente.desconto_especial.toString().replace('.', ',') : "",
     },
@@ -116,14 +124,77 @@ export function ClienteForm({ open, onOpenChange, onSubmit, cliente, isLoading }
               />
             </div>
 
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium">Endereço</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-2">
+                  <FormField
+                    control={form.control}
+                    name="rua"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Rua</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nome da rua" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                  control={form.control}
+                  name="numero"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Número</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Número" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="bairro"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Bairro</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Bairro" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="cidade"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cidade</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Cidade" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
             <FormField
               control={form.control}
-              name="endereco"
+              name="responsavel"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Endereço</FormLabel>
+                  <FormLabel>Responsável</FormLabel>
                   <FormControl>
-                    <Input placeholder="Endereço completo (opcional)" {...field} />
+                    <Input placeholder="Nome do responsável (opcional)" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
