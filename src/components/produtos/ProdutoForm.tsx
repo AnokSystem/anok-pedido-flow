@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -39,11 +40,11 @@ export function ProdutoForm({ open, onOpenChange, onSubmit, produto, isLoading }
     defaultValues: {
       nome: produto?.nome || "",
       unidade: produto?.unidade || "un",
-      preco_unitario: produto?.preco_unitario 
-        ? produto.preco_unitario.toLocaleString('pt-BR', { 
-            minimumFractionDigits: 2, 
-            maximumFractionDigits: 2 
-          }).replace('.', ',') 
+      preco_unitario: produto ? 
+        produto.preco_unitario.toLocaleString('pt-BR', { 
+          minimumFractionDigits: 2, 
+          maximumFractionDigits: 2 
+        }).replace('.', ',') 
         : "",
       descricao: produto?.descricao || "",
     },
@@ -111,9 +112,6 @@ export function ProdutoForm({ open, onOpenChange, onSubmit, produto, isLoading }
                   <FormLabel>Preço Unitário (R$)</FormLabel>
                   <FormControl>
                     <Input 
-                      type="number" 
-                      step="0.01" 
-                      min="0" 
                       placeholder="0,00" 
                       {...field} 
                     />
