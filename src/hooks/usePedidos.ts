@@ -3,9 +3,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Pedido, ItemPedido } from '@/types';
 import { toast } from '@/hooks/use-toast';
+import { useClientes } from '@/hooks/useClientes';
 
 export function usePedidos() {
   const queryClient = useQueryClient();
+  const { clientes } = useClientes();
 
   const { data: pedidos, isLoading } = useQuery({
     queryKey: ['pedidos'],
@@ -106,6 +108,10 @@ export function usePedidos() {
     mutationFn: async (pedido: Omit<Pedido, 'id' | 'itens'> & { itens: Omit<ItemPedido, 'id' | 'pedido_id'>[] }) => {
       console.log('Criando pedido:', pedido);
       
+      // Buscar desconto do cliente, se houver
+      const cliente = clientes?.find(c => c.id === pedido.cliente_id);
+      const descontoCliente = cliente?.desconto_especial || 0;
+      
       // Preparar dados para inserção
       const pedidoParaInserir = {
         numero_pedido: pedido.numero_pedido,
@@ -134,9 +140,11 @@ export function usePedidos() {
         // Adicionar os itens do pedido
         if (pedido.itens && pedido.itens.length > 0) {
           const itensComPedidoId = pedido.itens.map(item => ({
-            ...item,
             pedido_id: novoPedido.id,
+            produto_id: item.produto_id,
+            descricao: item.descricao,
             quantidade: Number(item.quantidade),
+            unidade: item.unidade,
             valor_unit: Number(item.valor_unit),
             valor_total: Number(item.valor_total),
             largura: item.largura ? Number(item.largura) : null,
@@ -179,6 +187,10 @@ export function usePedidos() {
   const updatePedido = useMutation({
     mutationFn: async (pedido: Pedido) => {
       console.log('Atualizando pedido:', pedido);
+      
+      // Buscar desconto do cliente, se houver
+      const cliente = clientes?.find(c => c.id === pedido.cliente_id);
+      const descontoCliente = cliente?.desconto_especial || 0;
       
       // Preparar dados para atualização
       const pedidoParaAtualizar = {

@@ -20,6 +20,7 @@ import { gerarNumeroSequencial } from "@/lib/utils";
 import { useProdutos } from "@/hooks/useProdutos";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { toast } from "@/hooks/use-toast";
 
 const statusOptions = ["Criado", "Em Produção", "Pronto", "Entregue"];
 
@@ -53,6 +54,8 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
   const [altura, setAltura] = useState<number | undefined>(undefined);
   const [unidade, setUnidade] = useState<string>("un");
   const [total, setTotal] = useState<number>(0);
+  const [clienteSelecionado, setClienteSelecionado] = useState<string>("");
+  const [descontoCliente, setDescontoCliente] = useState<number>(0);
   
   const editMode = !!pedido;
   
@@ -70,10 +73,13 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
   useEffect(() => {
     if (open && editMode && pedido?.itens) {
       setItensPedido(pedido.itens);
-      calcularTotal(pedido.itens);
+      setClienteSelecionado(pedido.cliente_id);
+      calcularTotal(pedido.itens, getClienteDesconto(pedido.cliente_id));
     } else if (open && !editMode) {
       setItensPedido([]);
+      setClienteSelecionado("");
       setTotal(0);
+      setDescontoCliente(0);
     }
   }, [open, editMode, pedido]);
   
@@ -100,6 +106,7 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
           data_entrega: pedido.data_entrega ? new Date(pedido.data_entrega) : undefined,
           status: pedido.status,
         });
+        setClienteSelecionado(pedido.cliente_id);
       } else {
         // In creation mode, reset to defaults with generated number
         form.reset({
@@ -109,6 +116,7 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
           data_entrega: undefined,
           status: "Criado",
         });
+        setClienteSelecionado("");
       }
     }
   }, [open, editMode, pedido, form, numeroPedidoGerado]);
@@ -119,6 +127,21 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
       form.setValue("numero_pedido", numeroPedidoGerado);
     }
   }, [numeroPedidoGerado, form, editMode, open]);
+
+  // Função para obter o desconto do cliente
+  const getClienteDesconto = (clienteId: string): number => {
+    const cliente = clientes?.find(c => c.id === clienteId);
+    return cliente?.desconto_especial || 0;
+  };
+
+  // Lidar com a mudança de cliente
+  const handleClienteChange = (clienteId: string) => {
+    setClienteSelecionado(clienteId);
+    const desconto = getClienteDesconto(clienteId);
+    setDescontoCliente(desconto);
+    // Recalcular o total com o novo desconto
+    calcularTotal(itensPedido, desconto);
+  };
 
   // Adicionar um novo item ao pedido
   const adicionarItem = () => {
@@ -167,7 +190,7 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
 
     const novosItens = [...itensPedido, novoItem];
     setItensPedido(novosItens);
-    calcularTotal(novosItens);
+    calcularTotal(novosItens, descontoCliente);
     
     // Limpar campos após adicionar
     setProdutoSelecionado("");
@@ -182,12 +205,12 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
     const novosItens = [...itensPedido];
     novosItens.splice(index, 1);
     setItensPedido(novosItens);
-    calcularTotal(novosItens);
+    calcularTotal(novosItens, descontoCliente);
   };
 
   // Calcular o total do pedido
-  const calcularTotal = (itens: ItemPedido[]) => {
-    const novoTotal = calcularTotalPedido(itens);
+  const calcularTotal = (itens: ItemPedido[], descontoPercentual: number = 0) => {
+    const novoTotal = calcularTotalPedido(itens, descontoPercentual);
     setTotal(novoTotal);
   };
 
@@ -208,16 +231,6 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
     };
     
     onSubmit(dadosCompletos);
-  };
-
-  // Função para exibir toast de erro
-  const toast = (props: { 
-    title: string; 
-    description: string; 
-    variant?: "default" | "destructive" | null 
-  }) => {
-    console.error(props.title, props.description);
-    // Implementação real dependeria do componente de toast
   };
 
   const handleProdutoChange = (produtoId: string) => {
@@ -266,7 +279,13 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Cliente</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select 
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        handleClienteChange(value);
+                      }} 
+                      value={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione um cliente" />
@@ -278,7 +297,7 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
                         ) : clientes && clientes.length > 0 ? (
                           clientes.map((cliente) => (
                             <SelectItem key={cliente.id} value={cliente.id}>
-                              {cliente.nome}
+                              {cliente.nome} {cliente.desconto_especial ? `(${cliente.desconto_especial}% desc.)` : ''}
                             </SelectItem>
                           ))
                         ) : (
@@ -393,6 +412,14 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
                   </FormItem>
                 )}
               />
+              
+              {descontoCliente > 0 && (
+                <div className="md:col-span-2">
+                  <div className="text-sm font-medium text-green-600">
+                    Cliente com desconto especial de {descontoCliente}% (será aplicado automaticamente)
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Produtos */}
@@ -521,7 +548,21 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
                     </Table>
                   </div>
 
-                  <div className="flex justify-end">
+                  <div className="flex flex-col gap-1 items-end">
+                    {descontoCliente > 0 && (
+                      <div className="text-right text-sm">
+                        <span className="text-muted-foreground mr-2">Subtotal:</span>
+                        <span>{formatarCurrency(calcularTotalPedido(itensPedido, 0))}</span>
+                      </div>
+                    )}
+                    
+                    {descontoCliente > 0 && (
+                      <div className="text-right text-sm text-green-600">
+                        <span className="mr-2">Desconto ({descontoCliente}%):</span>
+                        <span>-{formatarCurrency(calcularTotalPedido(itensPedido, 0) - total)}</span>
+                      </div>
+                    )}
+                    
                     <div className="text-right font-semibold">
                       <span className="text-muted-foreground mr-2">Total do Pedido:</span>
                       <span className="text-lg">{formatarCurrency(total)}</span>
