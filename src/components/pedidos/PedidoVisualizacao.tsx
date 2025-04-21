@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Pedido, Empresa } from "@/types";
+import { Pedido, Empresa, Cliente } from "@/types";
 import { formatarCurrency, formatarData, formatarCpfCnpj } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Download, Printer, FileText } from "lucide-react";
