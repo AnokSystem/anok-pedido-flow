@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -27,6 +28,19 @@ export default {
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
 					foreground: 'hsl(var(--primary-foreground))'
+				},
+				anok: {
+					DEFAULT: '#3BB273',
+					50: '#E8F7EE',
+					100: '#D1EFDE',
+					200: '#A3DFBD',
+					300: '#75CF9D',
+					400: '#47C07C',
+					500: '#3BB273',
+					600: '#2E8C59',
+					700: '#216640',
+					800: '#154026',
+					900: '#081A0D',
 				},
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
@@ -84,11 +98,25 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				fadeIn: {
+					"0%": { opacity: "0" },
+					"100%": { opacity: "1" }
+				},
+				slideIn: {
+					"0%": { transform: "translateX(-20px)", opacity: "0" },
+					"100%": { transform: "translateX(0)", opacity: "1" }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				"fade-in": "fadeIn 0.3s ease-in-out",
+				"slide-in": "slideIn 0.4s ease-out"
+			},
+			fontFamily: {
+				sans: ['Inter', 'system-ui', 'sans-serif'],
+				display: ['Poppins', 'system-ui', 'sans-serif'],
 			}
 		}
 	},
