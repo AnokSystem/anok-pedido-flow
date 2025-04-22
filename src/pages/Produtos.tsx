@@ -82,6 +82,10 @@ export default function Produtos() {
     }
   };
 
+  const handleSuccess = () => {
+    setFormOpen(false);
+  };
+
   const handleDelete = async () => {
     // A funcionalidade de exclusão será implementada em uma etapa futura
     setConfirmDeleteOpen(false);
@@ -172,6 +176,7 @@ export default function Produtos() {
         onSubmit={handleSubmit}
         produto={selectedProduto}
         isLoading={isSubmitting}
+        onSuccess={handleSuccess}
       />
 
       {/* Confirmação de exclusão */}
