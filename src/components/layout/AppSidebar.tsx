@@ -11,7 +11,7 @@ import {
   HelpCircle,
   Menu,
   LayoutDashboard,
-  LogOut
+  User
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -84,6 +84,7 @@ export function AppSidebar() {
         <NavItem to="/clientes" icon={Users} label="Clientes" collapsed={collapsed} />
         <NavItem to="/produtos" icon={Package} label="Produtos" collapsed={collapsed} />
         <NavItem to="/pedidos" icon={FileText} label="Pedidos" collapsed={collapsed} />
+        <NavItem to="/perfil" icon={User} label="Meu Perfil" collapsed={collapsed} />
         <NavItem to="/configuracoes" icon={Settings} label="Configurações" collapsed={collapsed} />
         <NavItem to="/ajuda" icon={HelpCircle} label="Ajuda" collapsed={collapsed} />
       </nav>
