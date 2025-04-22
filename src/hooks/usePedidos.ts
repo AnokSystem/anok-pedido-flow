@@ -121,7 +121,8 @@ export function usePedidos() {
         data_entrega: pedido.data_entrega && typeof pedido.data_entrega === 'object' ? 
           new Date(pedido.data_entrega as any).toISOString() : pedido.data_entrega,
         total: Number(pedido.total) || 0,
-        status: pedido.status
+        status: pedido.status,
+        descricao: pedido.descricao || null,
       };
       
       try {
@@ -201,7 +202,8 @@ export function usePedidos() {
         data_entrega: pedido.data_entrega && typeof pedido.data_entrega === 'object' ? 
           new Date(pedido.data_entrega as any).toISOString() : pedido.data_entrega,
         total: Number(pedido.total) || 0,
-        status: pedido.status
+        status: pedido.status,
+        descricao: pedido.descricao || null,
       };
       
       try {

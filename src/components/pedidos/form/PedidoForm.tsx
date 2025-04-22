@@ -23,6 +23,7 @@ const pedidoSchema = z.object({
   data_emissao: z.date(),
   data_entrega: z.date().optional(),
   status: z.string().min(1, "Selecione um status"),
+  descricao: z.string().optional(),
 });
 
 interface PedidoFormProps {
@@ -57,6 +58,7 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
       data_emissao: pedido?.data_emissao ? new Date(pedido.data_emissao) : new Date(),
       data_entrega: pedido?.data_entrega ? new Date(pedido.data_entrega) : undefined,
       status: pedido?.status || "Criado",
+      descricao: pedido?.descricao || "",
     },
   });
 

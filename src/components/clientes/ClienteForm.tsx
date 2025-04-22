@@ -240,7 +240,10 @@ export function ClienteForm({ open, onOpenChange, onSubmit, cliente, isLoading }
                 <FormItem>
                   <FormLabel>Desconto Especial (%)</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ex: 5,0" {...field} />
+                    <Input placeholder="Ex: 5,0" onChange={(e) => {
+                      const value = e.target.value;
+                      field.onChange(value === "" ? undefined : Number(value));
+                    }} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

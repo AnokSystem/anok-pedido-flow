@@ -1,4 +1,3 @@
-
 export type Usuario = {
   id: string;
   nome: string;
@@ -47,18 +46,18 @@ export type Produto = {
 
 export type StatusPedido = 'Criado' | 'Em Produção' | 'Pronto' | 'Entregue';
 
-export type Pedido = {
+export interface Pedido {
   id: string;
   numero_pedido: string;
   cliente_id: string;
-  empresa_id: string;
-  data_emissao: string;
-  data_entrega: string;
+  data_emissao: Date | string;
+  data_entrega?: Date | string;
   total: number;
-  status: StatusPedido;
-  itens: ItemPedido[];
+  status: string;
   cliente?: Cliente;
-};
+  itens: ItemPedido[];
+  descricao?: string;
+}
 
 export type ItemPedido = {
   id: string;

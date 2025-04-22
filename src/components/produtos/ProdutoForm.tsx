@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -109,6 +108,10 @@ export function ProdutoForm({ open, onOpenChange, onSubmit, produto, isLoading }
                   <FormControl>
                     <Input 
                       placeholder="0,00" 
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        field.onChange(value === "" ? undefined : Number(value));
+                      }}
                       {...field} 
                     />
                   </FormControl>

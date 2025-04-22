@@ -10,16 +10,7 @@ import { toast } from "@/hooks/use-toast";
 import { jsPDF } from "jspdf";
 import 'jspdf-autotable';
 import { supabase } from "@/integrations/supabase/client";
-
-// Need to add the autoTable to jsPDF prototype
-import { autoTable } from 'jspdf-autotable';
-
-// Add type augmentation
-declare module 'jspdf' {
-  interface jsPDF {
-    autoTable: typeof autoTable;
-  }
-}
+import autoTable from 'jspdf-autotable';
 
 interface PedidoVisualizacaoProps {
   open: boolean;
@@ -160,6 +151,11 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
       }
       doc.text(`Status: ${pedido.status}`, 14, 105);
       
+      // Add description if exists
+      if (pedido.descricao) {
+        doc.text(`Descrição: ${pedido.descricao}`, 14, 110);
+      }
+      
       // Add items table
       const tableColumn = ["Item", "Qtd", "Un", "Dimensões", "Valor Unit.", "Total"];
       const tableRows = pedido.itens.map(item => {
@@ -176,16 +172,17 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
       });
       
       // Use autoTable properly
-      doc.autoTable({
+      const startY = pedido.descricao ? 120 : 115;
+      autoTable(doc, {
         head: [tableColumn],
         body: tableRows,
-        startY: 115,
+        startY: startY,
         theme: 'grid',
         styles: { fontSize: 10 }
       });
       
       // Add total
-      const finalY = doc.lastAutoTable.finalY || 150;
+      const finalY = (doc as any).lastAutoTable?.finalY || 150;
       doc.setFontSize(12);
       doc.text(`Total do Pedido: ${formatarCurrency(pedido.total)}`, 130, finalY + 10);
       
@@ -297,6 +294,18 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
               </div>
             </CardContent>
           </Card>
+
+          {/* Descrição do pedido (se existir) */}
+          {pedido.descricao && (
+            <Card className="print-full-width">
+              <CardHeader>
+                <CardTitle>Descrição</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="whitespace-pre-wrap">{pedido.descricao}</p>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Tabela de itens do pedido */}
           <Card className="print-full-width">
