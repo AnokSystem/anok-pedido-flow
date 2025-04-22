@@ -1,3 +1,4 @@
+
 export type Usuario = {
   id: string;
   nome: string;
@@ -50,8 +51,8 @@ export interface Pedido {
   id: string;
   numero_pedido: string;
   cliente_id: string;
-  data_emissao: Date | string;
-  data_entrega?: Date | string;
+  data_emissao: string;
+  data_entrega?: string;
   total: number;
   status: string;
   cliente?: Cliente;

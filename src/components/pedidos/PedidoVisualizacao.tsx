@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Pedido, Empresa, Cliente } from "@/types";
@@ -21,6 +21,7 @@ interface PedidoVisualizacaoProps {
 export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisualizacaoProps) {
   const [empresa, setEmpresa] = useState<Empresa | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const printRef = useRef<HTMLDivElement>(null);
 
   // Buscar informações da empresa
   useEffect(() => {
@@ -31,7 +32,6 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
 
   // Add print-specific styles when component mounts
   useEffect(() => {
-    // Add print styles
     const style = document.createElement('style');
     style.id = 'print-styles';
     style.innerHTML = `
@@ -47,7 +47,9 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
           left: 0;
           top: 0;
           width: 100%;
+          height: 100%;
           padding: 20px;
+          background-color: white;
         }
         .no-print {
           display: none !important;
@@ -55,16 +57,26 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
         .print-full-width {
           width: 100% !important;
         }
-        .card {
-          border: none !important;
-          box-shadow: none !important;
-          margin-bottom: 20px !important;
+        .print-container {
+          display: block !important;
+          page-break-inside: avoid;
         }
         .print-mb-4 {
           margin-bottom: 1rem !important;
         }
         .print-mt-8 {
           margin-top: 2rem !important;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+        th, td {
+          border: 1px solid #ddd;
+          padding: 8px;
+        }
+        th {
+          background-color: #f2f2f2;
         }
       }
     `;
@@ -152,8 +164,10 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
       doc.text(`Status: ${pedido.status}`, 14, 105);
       
       // Add description if exists
+      let startY = 110;
       if (pedido.descricao) {
-        doc.text(`Descrição: ${pedido.descricao}`, 14, 110);
+        doc.text(`Descrição: ${pedido.descricao}`, 14, startY);
+        startY += 10;
       }
       
       // Add items table
@@ -172,7 +186,6 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
       });
       
       // Use autoTable properly
-      const startY = pedido.descricao ? 120 : 115;
       autoTable(doc, {
         head: [tableColumn],
         body: tableRows,
@@ -244,7 +257,7 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 print:p-6" id="pedido-para-impressao">
+        <div className="space-y-4 print-container" id="pedido-para-impressao" ref={printRef}>
           {/* Informações da empresa */}
           {empresa && (
             <Card className="border-none shadow-none print-mb-4">
@@ -268,12 +281,13 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
           )}
 
           {/* Cabeçalho com informações do pedido */}
-          <Card className="print-full-width">
+          <Card className="print-full-width mb-4">
             <CardHeader>
               <CardTitle>Informações do Pedido</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
+                <p><span className="font-medium">Número do Pedido:</span> {pedido.numero_pedido}</p>
                 <p><span className="font-medium">Cliente:</span> {pedido.cliente?.nome}</p>
                 {pedido.cliente?.cpf_cnpj && (
                   <p><span className="font-medium">CPF/CNPJ:</span> {formatarCpfCnpj(pedido.cliente.cpf_cnpj)}</p>
@@ -297,7 +311,7 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
 
           {/* Descrição do pedido (se existir) */}
           {pedido.descricao && (
-            <Card className="print-full-width">
+            <Card className="print-full-width mb-4">
               <CardHeader>
                 <CardTitle>Descrição</CardTitle>
               </CardHeader>
@@ -308,7 +322,7 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
           )}
 
           {/* Tabela de itens do pedido */}
-          <Card className="print-full-width">
+          <Card className="print-full-width mb-4">
             <CardHeader>
               <CardTitle>Itens do Pedido</CardTitle>
             </CardHeader>
@@ -317,50 +331,48 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
                 <table className="w-full border-collapse">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left py-2 px-3">Item</th>
-                      <th className="text-right py-2 px-3">Quantidade</th>
-                      <th className="text-left py-2 px-3">Unidade</th>
+                      <th className="text-left p-2">Item</th>
+                      <th className="text-right p-2">Quantidade</th>
+                      <th className="text-left p-2">Unidade</th>
                       {(pedido.itens.some(item => item.largura) || pedido.itens.some(item => item.altura)) && (
-                        <>
-                          <th className="text-right py-2 px-3">Dimensões</th>
-                        </>
+                        <th className="text-right p-2">Dimensões</th>
                       )}
-                      <th className="text-right py-2 px-3">Valor Unit.</th>
-                      <th className="text-right py-2 px-3">Total</th>
+                      <th className="text-right p-2">Valor Unit.</th>
+                      <th className="text-right p-2">Total</th>
                     </tr>
                   </thead>
                   <tbody>
                     {pedido.itens.length === 0 ? (
                       <tr className="border-b">
-                        <td colSpan={6} className="py-4 text-center text-muted-foreground">
+                        <td colSpan={6} className="p-4 text-center text-muted-foreground">
                           Nenhum item adicionado a este pedido
                         </td>
                       </tr>
                     ) : (
                       pedido.itens.map((item, index) => (
                         <tr key={item.id || index} className="border-b">
-                          <td className="py-2 px-3">{item.produto?.nome || item.descricao || '-'}</td>
-                          <td className="py-2 px-3 text-right">{item.quantidade}</td>
-                          <td className="py-2 px-3">{item.unidade.toUpperCase()}</td>
+                          <td className="p-2">{item.produto?.nome || item.descricao || '-'}</td>
+                          <td className="p-2 text-right">{item.quantidade}</td>
+                          <td className="p-2">{item.unidade.toUpperCase()}</td>
                           {(pedido.itens.some(item => item.largura) || pedido.itens.some(item => item.altura)) && (
-                            <td className="py-2 px-3 text-right">
+                            <td className="p-2 text-right">
                               {item.largura && item.altura
                                 ? `${item.largura} x ${item.altura}`
                                 : '-'}
                             </td>
                           )}
-                          <td className="py-2 px-3 text-right">{formatarCurrency(item.valor_unit)}</td>
-                          <td className="py-2 px-3 text-right">{formatarCurrency(item.valor_total)}</td>
+                          <td className="p-2 text-right">{formatarCurrency(item.valor_unit)}</td>
+                          <td className="p-2 text-right">{formatarCurrency(item.valor_total)}</td>
                         </tr>
                       ))
                     )}
                   </tbody>
                   <tfoot>
                     <tr className="font-medium">
-                      <td colSpan={(pedido.itens.some(item => item.largura) || pedido.itens.some(item => item.altura)) ? 5 : 4} className="py-3 px-3 text-right">
+                      <td colSpan={(pedido.itens.some(item => item.largura) || pedido.itens.some(item => item.altura)) ? 5 : 4} className="p-3 text-right">
                         Total:
                       </td>
-                      <td className="py-3 px-3 text-right">
+                      <td className="p-3 text-right">
                         {formatarCurrency(pedido.total)}
                       </td>
                     </tr>
