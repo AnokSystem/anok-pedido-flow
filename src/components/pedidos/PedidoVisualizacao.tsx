@@ -39,17 +39,22 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
         body * {
           visibility: hidden;
         }
+        .Dialog__overlay {
+          display: none !important;
+        }
         #pedido-para-impressao, #pedido-para-impressao * {
           visibility: visible;
+          display: block !important;
         }
         #pedido-para-impressao {
           position: absolute;
           left: 0;
           top: 0;
           width: 100%;
-          height: 100%;
+          height: auto;
           padding: 20px;
           background-color: white;
+          overflow: visible !important;
         }
         .no-print {
           display: none !important;
@@ -60,6 +65,7 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
         .print-container {
           display: block !important;
           page-break-inside: avoid;
+          overflow: visible !important;
         }
         .print-mb-4 {
           margin-bottom: 1rem !important;
@@ -70,13 +76,37 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
         table {
           width: 100%;
           border-collapse: collapse;
+          display: table !important;
+        }
+        thead {
+          display: table-header-group !important;
+        }
+        tbody {
+          display: table-row-group !important;
+        }
+        tr {
+          display: table-row !important;
         }
         th, td {
           border: 1px solid #ddd;
           padding: 8px;
+          display: table-cell !important;
         }
         th {
           background-color: #f2f2f2;
+        }
+        .dialog-content {
+          transform: none !important;
+          position: static !important;
+          display: block !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          width: 100% !important;
+          max-width: none !important;
+          max-height: none !important;
+          overflow: visible !important;
+          box-shadow: none !important;
+          border: none !important;
         }
       }
     `;
@@ -240,11 +270,11 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto dialog-content">
+        <DialogHeader className="no-print">
           <DialogTitle className="flex justify-between items-center">
             <span>Pedido: {pedido.numero_pedido}</span>
-            <div className="flex space-x-2 no-print">
+            <div className="flex space-x-2">
               <Button variant="outline" size="sm" onClick={handlePrint}>
                 <Printer className="h-4 w-4 mr-2" />
                 Imprimir

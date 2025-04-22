@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -11,15 +11,14 @@ import { Cliente } from "@/types";
 const clienteSchema = z.object({
   nome: z.string().min(1, "O nome é obrigatório"),
   cpf_cnpj: z.string().min(1, "CPF/CNPJ é obrigatório"),
-  rua: z.string().optional(),
-  numero: z.string().optional(),
-  bairro: z.string().optional(),
-  cidade: z.string().optional(),
-  contato: z.string().optional(),
-  email: z.string().email("Digite um e-mail válido").optional().or(z.literal('')),
+  rua: z.string().min(1, "A rua é obrigatória"),
+  numero: z.string().min(1, "O número é obrigatório"),
+  bairro: z.string().min(1, "O bairro é obrigatório"),
+  cidade: z.string().min(1, "A cidade é obrigatória"),
+  contato: z.string().min(1, "O contato é obrigatório"),
+  email: z.string().email("Email inválido").or(z.string().length(0)),
   responsavel: z.string().optional(),
-  desconto_especial: z.string().optional()
-    .transform(val => val ? parseFloat(val.replace(',', '.')) : null),
+  desconto_especial: z.string().optional(),
 });
 
 type ClienteFormData = z.infer<typeof clienteSchema>;
@@ -27,12 +26,13 @@ type ClienteFormData = z.infer<typeof clienteSchema>;
 interface ClienteFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: ClienteFormData) => void;
+  onSubmit: (data: any) => void;
   cliente?: Cliente;
   isLoading: boolean;
 }
 
 export function ClienteForm({ open, onOpenChange, onSubmit, cliente, isLoading }: ClienteFormProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const editMode = !!cliente;
   
   const form = useForm<ClienteFormData>({
@@ -47,94 +47,140 @@ export function ClienteForm({ open, onOpenChange, onSubmit, cliente, isLoading }
       contato: cliente?.contato || "",
       email: cliente?.email || "",
       responsavel: cliente?.responsavel || "",
-      desconto_especial: cliente?.desconto_especial !== undefined
-        ? cliente.desconto_especial.toString().replace('.', ',')
-        : "",
+      desconto_especial: cliente?.desconto_especial?.toString() || "",
     },
   });
 
   const handleSubmit = (data: ClienteFormData) => {
-    onSubmit(data);
-  };
-
-  React.useEffect(() => {
-    if (open && cliente) {
-      form.reset({
-        nome: cliente.nome,
-        cpf_cnpj: cliente.cpf_cnpj,
-        rua: cliente.rua || "",
-        numero: cliente.numero || "",
-        bairro: cliente.bairro || "",
-        cidade: cliente.cidade || "",
-        contato: cliente.contato || "",
-        email: cliente.email || "",
-        responsavel: cliente.responsavel || "",
-        desconto_especial: cliente.desconto_especial !== undefined
-          ? cliente.desconto_especial.toString().replace('.', ',')
-          : "",
+    setIsSubmitting(true);
+    
+    // Convert desconto_especial string to number or undefined
+    const descontoEspecial = data.desconto_especial 
+      ? Number(data.desconto_especial) 
+      : undefined;
+    
+    const clienteData = {
+      ...data,
+      desconto_especial: descontoEspecial,
+    };
+    
+    if (editMode && cliente) {
+      // Editar cliente existente
+      onSubmit({
+        ...cliente,
+        ...clienteData,
       });
-    } else if (open) {
-      form.reset({
-        nome: "",
-        cpf_cnpj: "",
-        rua: "",
-        numero: "",
-        bairro: "",
-        cidade: "",
-        contato: "",
-        email: "",
-        responsavel: "",
-        desconto_especial: "",
-      });
+    } else {
+      // Adicionar novo cliente
+      onSubmit(clienteData);
     }
-  }, [open, cliente, form]);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>{editMode ? "Editar Cliente" : "Novo Cliente"}</DialogTitle>
+          <DialogDescription>
+            {editMode ? "Atualize as informações do cliente" : "Preencha as informações para criar um novo cliente"}
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="nome"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome do Cliente</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Digite o nome completo" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="cpf_cnpj"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>CPF/CNPJ</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Digite o CPF ou CNPJ" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="nome"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Nome do cliente" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="cpf_cnpj"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>CPF/CNPJ</FormLabel>
+                    <FormControl>
+                      <Input placeholder="CPF ou CNPJ" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="rua"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Rua</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Rua" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="numero"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Número</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Número" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="bairro"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Bairro</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Bairro" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="cidade"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cidade</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Cidade" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <FormField
                 control={form.control}
                 name="contato"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Telefone</FormLabel>
+                    <FormLabel>Contato</FormLabel>
                     <FormControl>
-                      <Input placeholder="Telefone de contato" {...field} />
+                      <Input placeholder="Telefone ou celular" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -146,9 +192,43 @@ export function ClienteForm({ open, onOpenChange, onSubmit, cliente, isLoading }
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>E-mail</FormLabel>
+                    <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="E-mail (opcional)" {...field} />
+                      <Input placeholder="Email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="responsavel"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Responsável (opcional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Nome do responsável" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="desconto_especial"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Desconto Especial % (opcional)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="Ex: 10" 
+                        {...field} 
+                        min="0"
+                        max="100"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -156,111 +236,17 @@ export function ClienteForm({ open, onOpenChange, onSubmit, cliente, isLoading }
               />
             </div>
 
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium">Endereço</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="md:col-span-2">
-                  <FormField
-                    control={form.control}
-                    name="rua"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Rua</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Nome da rua" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <FormField
-                  control={form.control}
-                  name="numero"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Número</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Número" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="bairro"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Bairro</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Bairro" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="cidade"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Cidade</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Cidade" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
-
-            <FormField
-              control={form.control}
-              name="responsavel"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Responsável</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Nome do responsável (opcional)" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="desconto_especial"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Desconto Especial (%)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ex: 5,0" onChange={(e) => {
-                      const value = e.target.value;
-                      field.onChange(value === "" ? undefined : Number(value));
-                    }} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             <DialogFooter>
               <Button 
                 type="button" 
                 variant="outline" 
                 onClick={() => onOpenChange(false)}
-                disabled={isLoading}
+                disabled={isLoading || isSubmitting}
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Salvando..." : editMode ? "Atualizar" : "Salvar"}
+              <Button type="submit" disabled={isLoading || isSubmitting}>
+                {isLoading || isSubmitting ? "Salvando..." : editMode ? "Atualizar" : "Salvar"}
               </Button>
             </DialogFooter>
           </form>

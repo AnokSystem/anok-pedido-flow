@@ -58,6 +58,7 @@ export interface Pedido {
   cliente?: Cliente;
   itens: ItemPedido[];
   descricao?: string;
+  empresa_id?: string;
 }
 
 export type ItemPedido = {
