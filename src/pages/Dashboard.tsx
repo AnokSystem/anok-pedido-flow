@@ -4,11 +4,19 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { StatusPedidoChart } from "@/components/dashboard/StatusPedidoChart";
 import { VendasMensaisChart } from "@/components/dashboard/VendasMensaisChart";
 import { UltimosPedidos } from "@/components/dashboard/UltimosPedidos";
-import { dashboardStatsMock, pedidosMock } from "@/lib/mockData";
 import { FileText, Package, ShoppingBag, Users } from "lucide-react";
 import { formatarCurrency } from "@/lib/utils";
+import { useDashboard } from "@/hooks/useDashboard";
+import { usePedidos } from "@/hooks/usePedidos";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Dashboard() {
+  const { data: stats, isLoading: isLoadingStats } = useDashboard();
+  const { pedidos, isLoading: isLoadingPedidos } = usePedidos();
+
+  // Get the last 5 orders
+  const ultimosPedidos = pedidos?.slice(0, 5) || [];
+
   return (
     <div className="space-y-6">
       <PageHeader 
@@ -17,43 +25,62 @@ export default function Dashboard() {
       />
       
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard 
-          title="Total de Pedidos" 
-          value={dashboardStatsMock.totalPedidos} 
-          icon={<FileText className="h-4 w-4" />}
-          trend={{ value: 12, isPositive: true }}
-        />
-        <StatCard 
-          title="Valor Total" 
-          value={formatarCurrency(dashboardStatsMock.valorTotal)} 
-          icon={<ShoppingBag className="h-4 w-4" />}
-          trend={{ value: 8, isPositive: true }}
-        />
-        <StatCard 
-          title="Clientes" 
-          value={dashboardStatsMock.totalClientes} 
-          icon={<Users className="h-4 w-4" />}
-          trend={{ value: 5, isPositive: true }}
-        />
-        <StatCard 
-          title="Produtos" 
-          value={dashboardStatsMock.totalProdutos} 
-          icon={<Package className="h-4 w-4" />}
-          trend={{ value: 2, isPositive: true }}
-        />
+        {isLoadingStats ? (
+          <>
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+          </>
+        ) : (
+          <>
+            <StatCard 
+              title="Total de Pedidos" 
+              value={stats?.totalPedidos || 0} 
+              icon={<FileText className="h-4 w-4" />}
+            />
+            <StatCard 
+              title="Valor Total" 
+              value={formatarCurrency(stats?.valorTotal || 0)} 
+              icon={<ShoppingBag className="h-4 w-4" />}
+            />
+            <StatCard 
+              title="Clientes" 
+              value={stats?.totalClientes || 0} 
+              icon={<Users className="h-4 w-4" />}
+            />
+            <StatCard 
+              title="Produtos" 
+              value={stats?.totalProdutos || 0} 
+              icon={<Package className="h-4 w-4" />}
+            />
+          </>
+        )}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <VendasMensaisChart data={dashboardStatsMock.pedidosPorMes} />
+          {isLoadingStats ? (
+            <Skeleton className="h-80" />
+          ) : (
+            <VendasMensaisChart data={stats?.pedidosPorMes || []} />
+          )}
         </div>
         <div>
-          <StatusPedidoChart data={dashboardStatsMock.pedidosPorStatus} />
+          {isLoadingStats ? (
+            <Skeleton className="h-80" />
+          ) : (
+            <StatusPedidoChart data={stats?.pedidosPorStatus || []} />
+          )}
         </div>
       </div>
 
       <div>
-        <UltimosPedidos pedidos={pedidosMock} />
+        {isLoadingPedidos ? (
+          <Skeleton className="h-96" />
+        ) : (
+          <UltimosPedidos pedidos={ultimosPedidos} />
+        )}
       </div>
     </div>
   );
