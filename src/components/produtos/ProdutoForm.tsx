@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -44,6 +44,18 @@ export function ProdutoForm({ open, onOpenChange, onSubmit, produto, isLoading }
       descricao: produto?.descricao || "",
     },
   });
+
+  // Fix: Update form when produto changes
+  useEffect(() => {
+    if (produto) {
+      form.reset({
+        nome: produto.nome,
+        unidade: produto.unidade,
+        preco_unitario: String(produto.preco_unitario).replace('.', ','),
+        descricao: produto.descricao || "",
+      });
+    }
+  }, [produto, form]);
 
   const handleSubmit = (data: ProdutoFormData) => {
     onSubmit(data);

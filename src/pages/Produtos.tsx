@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -52,7 +53,6 @@ export default function Produtos() {
 
   const handleSubmit = async (data: any) => {
     setIsSubmitting(true);
-    console.log('Criando produto:', data);
     
     try {
       if (selectedProduto) {
