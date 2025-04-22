@@ -1,4 +1,5 @@
-import React from "react";
+
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -45,8 +46,6 @@ export function ProdutoForm({ open, onOpenChange, onSubmit, produto, isLoading }
   });
 
   const handleSubmit = (data: ProdutoFormData) => {
-    setIsSubmitting(true);
-    
     // Convert preco_unitario string to number
     const produtoData = {
       ...data,
@@ -124,10 +123,6 @@ export function ProdutoForm({ open, onOpenChange, onSubmit, produto, isLoading }
                   <FormControl>
                     <Input 
                       placeholder="0,00" 
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        field.onChange(value === "" ? undefined : Number(value));
-                      }}
                       {...field} 
                     />
                   </FormControl>

@@ -39,11 +39,11 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
         body * {
           visibility: hidden;
         }
-        .Dialog__overlay {
+        .Dialog__overlay, .dialog-overlay {
           display: none !important;
         }
         #pedido-para-impressao, #pedido-para-impressao * {
-          visibility: visible;
+          visibility: visible !important;
           display: block !important;
         }
         #pedido-para-impressao {

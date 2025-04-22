@@ -2,15 +2,17 @@
 import React from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Cliente } from "@/types";
+import { Textarea } from "@/components/ui/textarea";
+
+const statusOptions = ["Criado", "Em Produção", "Pronto", "Entregue"];
 
 interface PedidoHeaderFormProps {
   form: any;
@@ -21,16 +23,14 @@ interface PedidoHeaderFormProps {
   descontoCliente: number;
 }
 
-export function PedidoHeaderForm({ 
-  form, 
-  editMode, 
-  clientesLoading, 
-  clientes, 
+export function PedidoHeaderForm({
+  form,
+  editMode,
+  clientesLoading,
+  clientes,
   handleClienteChange,
-  descontoCliente 
+  descontoCliente
 }: PedidoHeaderFormProps) {
-  const statusOptions = ["Criado", "Em Produção", "Pronto", "Entregue"];
-
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -192,7 +192,7 @@ export function PedidoHeaderForm({
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="descricao"
@@ -201,8 +201,8 @@ export function PedidoHeaderForm({
               <FormLabel>Descrição do Pedido (opcional)</FormLabel>
               <FormControl>
                 <Textarea 
-                  placeholder="Informações adicionais sobre o pedido" 
-                  className="min-h-24"
+                  placeholder="Informe uma descrição para este pedido..." 
+                  className="resize-none"
                   {...field} 
                 />
               </FormControl>
