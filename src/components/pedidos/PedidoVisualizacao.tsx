@@ -11,6 +11,7 @@ import { jsPDF } from "jspdf";
 import 'jspdf-autotable';
 import { supabase } from "@/integrations/supabase/client";
 import autoTable from 'jspdf-autotable';
+import { Separator } from "@/components/ui/separator";
 
 interface PedidoVisualizacaoProps {
   open: boolean;
@@ -200,6 +201,11 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
         startY = Math.max(startY + 25, currentY + 5); // Update startY to be below both logo and company info
       }
       
+      // Add a divider line after company info
+      doc.setDrawColor(200, 200, 200);
+      doc.line(14, startY, 196, startY);
+      startY += 8;
+      
       // Add title
       doc.setFontSize(16);
       doc.setFont(undefined, 'bold');
@@ -225,6 +231,12 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
         startY += 5;
       }
       
+      // Add a divider line after customer info
+      doc.setDrawColor(200, 200, 200);
+      doc.line(14, startY + 3, 196, startY + 3);
+      startY += 8;
+      
+      // Add order info
       doc.text(`Data de Emissão: ${formatarData(pedido.data_emissao)}`, 14, startY);
       startY += 5;
       
@@ -248,6 +260,11 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
         doc.text(splitDescription, 14, startY);
         startY += splitDescription.length * 5 + 5;
       }
+      
+      // Add a divider line before items table
+      doc.setDrawColor(200, 200, 200);
+      doc.line(14, startY, 196, startY);
+      startY += 8;
       
       // Add items table
       const tableColumn = ["Item", "Qtd", "Un", "Dimensões", "Valor Unit.", "Total"];
@@ -277,6 +294,10 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
       const finalY = (doc as any).lastAutoTable?.finalY || 150;
       doc.setFontSize(12);
       doc.text(`Total do Pedido: ${formatarCurrency(pedido.total)}`, 130, finalY + 10);
+      
+      // Add a divider line before signatures
+      doc.setDrawColor(200, 200, 200);
+      doc.line(14, finalY + 25, 196, finalY + 25);
       
       // Add signature fields
       doc.setFontSize(10);
@@ -363,6 +384,9 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
             </Card>
           )}
 
+          {/* Separador após informações da empresa */}
+          <Separator className="my-4" />
+
           {/* Cabeçalho com informações do pedido */}
           <Card className="print-full-width mb-4">
             <CardHeader>
@@ -392,16 +416,22 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
             </CardContent>
           </Card>
 
+          {/* Separador após informações do pedido */}
+          <Separator className="my-4" />
+
           {/* Descrição do pedido (se existir) */}
           {pedido.descricao && (
-            <Card className="print-full-width mb-4">
-              <CardHeader>
-                <CardTitle>Descrição</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="whitespace-pre-wrap">{pedido.descricao}</p>
-              </CardContent>
-            </Card>
+            <>
+              <Card className="print-full-width mb-4">
+                <CardHeader>
+                  <CardTitle>Descrição</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="whitespace-pre-wrap">{pedido.descricao}</p>
+                </CardContent>
+              </Card>
+              <Separator className="my-4" />
+            </>
           )}
 
           {/* Tabela de itens do pedido */}
@@ -464,6 +494,9 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
               </div>
             </CardContent>
           </Card>
+
+          {/* Separador antes das assinaturas */}
+          <Separator className="my-4" />
 
           {/* Espaço para assinaturas */}
           <Card className="print-mb-0 print-mt-8 border-none shadow-none">

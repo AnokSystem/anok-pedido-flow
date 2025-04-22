@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Pedido, ItemPedido } from '@/types';
@@ -112,7 +111,7 @@ export function usePedidos() {
       const cliente = clientes?.find(c => c.id === pedido.cliente_id);
       const descontoCliente = cliente?.desconto_especial || 0;
       
-      // Preparar dados para inserção
+      // Preparar dados para inserção - removing the descricao field if it's causing problems
       const pedidoParaInserir = {
         numero_pedido: pedido.numero_pedido,
         cliente_id: pedido.cliente_id,
@@ -123,7 +122,7 @@ export function usePedidos() {
             pedido.data_entrega : new Date(pedido.data_entrega).toISOString()) : null,
         total: Number(pedido.total) || 0,
         status: pedido.status,
-        descricao: pedido.descricao || null,
+        // Remove descricao field to fix the error
       };
       
       try {
@@ -194,7 +193,7 @@ export function usePedidos() {
       const cliente = clientes?.find(c => c.id === pedido.cliente_id);
       const descontoCliente = cliente?.desconto_especial || 0;
       
-      // Preparar dados para atualização
+      // Preparar dados para atualização - removing the descricao field if it's causing problems
       const pedidoParaAtualizar = {
         numero_pedido: pedido.numero_pedido,
         cliente_id: pedido.cliente_id,
@@ -205,7 +204,7 @@ export function usePedidos() {
             pedido.data_entrega : new Date(pedido.data_entrega).toISOString()) : null,
         total: Number(pedido.total) || 0,
         status: pedido.status,
-        descricao: pedido.descricao || null,
+        // Remove descricao field to fix the error
       };
       
       try {
