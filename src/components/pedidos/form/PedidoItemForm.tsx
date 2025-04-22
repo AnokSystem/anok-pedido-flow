@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus } from "lucide-react";
 import { Produto } from "@/types";
 import { formatarCurrency } from "@/lib/utils";
+import { Textarea } from "@/components/ui/textarea";
 
 interface PedidoItemFormProps {
   produtosLoading: boolean;
@@ -15,10 +16,12 @@ interface PedidoItemFormProps {
   largura?: number;
   altura?: number;
   unidade: string;
+  descricao: string;
   handleProdutoChange: (produtoId: string) => void;
   setQuantidade: (quantidade: number) => void;
   setLargura: (largura: number | undefined) => void;
   setAltura: (altura: number | undefined) => void;
+  setDescricao: (descricao: string) => void;
   adicionarItem: () => void;
 }
 
@@ -30,74 +33,89 @@ export function PedidoItemForm({
   largura,
   altura,
   unidade,
+  descricao,
   handleProdutoChange,
   setQuantidade,
   setLargura,
   setAltura,
+  setDescricao,
   adicionarItem,
 }: PedidoItemFormProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-      <div className="md:col-span-2">
-        <label className="block text-sm font-medium mb-1">Produto</label>
-        <Select onValueChange={handleProdutoChange} value={produtoSelecionado}>
-          <SelectTrigger>
-            <SelectValue placeholder="Selecione um produto" />
-          </SelectTrigger>
-          <SelectContent>
-            {produtosLoading ? (
-              <SelectItem value="loading" disabled>Carregando produtos...</SelectItem>
-            ) : produtos && produtos.length > 0 ? (
-              produtos.map((produto) => (
-                <SelectItem key={produto.id} value={produto.id}>
-                  {produto.nome} - {formatarCurrency(produto.preco_unitario)}
-                </SelectItem>
-              ))
-            ) : (
-              <SelectItem value="empty" disabled>Nenhum produto encontrado</SelectItem>
-            )}
-          </SelectContent>
-        </Select>
+    <div className="grid grid-cols-1 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium mb-1">Produto</label>
+          <Select onValueChange={handleProdutoChange} value={produtoSelecionado}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione um produto" />
+            </SelectTrigger>
+            <SelectContent>
+              {produtosLoading ? (
+                <SelectItem value="loading" disabled>Carregando produtos...</SelectItem>
+              ) : produtos && produtos.length > 0 ? (
+                produtos.map((produto) => (
+                  <SelectItem key={produto.id} value={produto.id}>
+                    {produto.nome} - {formatarCurrency(produto.preco_unitario)}
+                  </SelectItem>
+                ))
+              ) : (
+                <SelectItem value="empty" disabled>Nenhum produto encontrado</SelectItem>
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Quantidade</label>
+          <Input 
+            type="number" 
+            value={quantidade} 
+            onChange={(e) => setQuantidade(Number(e.target.value))} 
+            min={1}
+          />
+        </div>
+
+        {unidade === 'm²' && (
+          <>
+            <div>
+              <label className="block text-sm font-medium mb-1">Largura (m)</label>
+              <Input 
+                type="number" 
+                value={largura || ''} 
+                onChange={(e) => setLargura(Number(e.target.value))} 
+                step="0.01"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Altura (m)</label>
+              <Input 
+                type="number" 
+                value={altura || ''} 
+                onChange={(e) => setAltura(Number(e.target.value))} 
+                step="0.01"
+              />
+            </div>
+          </>
+        )}
       </div>
 
-      <div>
-        <label className="block text-sm font-medium mb-1">Quantidade</label>
-        <Input 
-          type="number" 
-          value={quantidade} 
-          onChange={(e) => setQuantidade(Number(e.target.value))} 
-          min={1}
+      {/* New description field */}
+      <div className="col-span-full">
+        <label className="block text-sm font-medium mb-1">Informações adicionais / Material</label>
+        <Textarea 
+          placeholder="Descreva informações sobre o item ou material utilizado..."
+          value={descricao}
+          onChange={(e) => setDescricao(e.target.value)}
+          className="min-h-[60px]"
         />
       </div>
 
-      {unidade === 'm²' && (
-        <>
-          <div>
-            <label className="block text-sm font-medium mb-1">Largura (m)</label>
-            <Input 
-              type="number" 
-              value={largura || ''} 
-              onChange={(e) => setLargura(Number(e.target.value))} 
-              step="0.01"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Altura (m)</label>
-            <Input 
-              type="number" 
-              value={altura || ''} 
-              onChange={(e) => setAltura(Number(e.target.value))} 
-              step="0.01"
-            />
-          </div>
-        </>
-      )}
-
-      <div className="flex items-end">
+      <div className="flex justify-end">
         <Button 
           type="button" 
-          onClick={adicionarItem} 
-          className="w-full"
+          onClick={adicionarItem}
+          className="w-full md:w-auto"
         >
           <Plus className="h-4 w-4 mr-1" /> Adicionar
         </Button>

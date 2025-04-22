@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -47,7 +46,8 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
   const [total, setTotal] = useState<number>(0);
   const [clienteSelecionado, setClienteSelecionado] = useState<string>("");
   const [descontoCliente, setDescontoCliente] = useState<number>(0);
-  
+  const [descricao, setDescricao] = useState<string>("");
+
   const editMode = !!pedido;
   
   const form = useForm<z.infer<typeof pedidoSchema>>({
@@ -62,7 +62,6 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
     },
   });
 
-  // Gera um número de pedido automático quando abrir o form para novo pedido
   useEffect(() => {
     if (open && !editMode) {
       const proximoNumero = (pedidos?.length || 0) + 1;
@@ -71,7 +70,6 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
     }
   }, [open, editMode, pedidos, form]);
 
-  // Carrega os itens do pedido quando estiver em modo de edição
   useEffect(() => {
     if (open && editMode && pedido?.itens) {
       setItensPedido(pedido.itens);
@@ -85,13 +83,11 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
     }
   }, [open, editMode, pedido]);
 
-  // Função para obter o desconto do cliente
   const getClienteDesconto = (clienteId: string): number => {
     const cliente = clientes?.find(c => c.id === clienteId);
     return cliente?.desconto_especial || 0;
   };
 
-  // Lidar com a mudança de cliente
   const handleClienteChange = (clienteId: string) => {
     setClienteSelecionado(clienteId);
     const desconto = getClienteDesconto(clienteId);
@@ -107,7 +103,6 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
     }
   };
 
-  // Adicionar um novo item ao pedido
   const adicionarItem = () => {
     if (!produtoSelecionado || quantidade <= 0) {
       toast({
@@ -142,7 +137,7 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
       id: `temp-${Date.now()}`,
       pedido_id: pedido?.id || "",
       produto_id: produtoEncontrado.id,
-      descricao: produtoEncontrado.descricao || produtoEncontrado.nome,
+      descricao: descricao || produtoEncontrado.nome,
       quantidade: quantidade,
       unidade: produtoEncontrado.unidade,
       valor_unit: valorUnitario,
@@ -156,15 +151,14 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
     setItensPedido(novosItens);
     calcularTotal(novosItens, descontoCliente);
     
-    // Limpar campos após adicionar
     setProdutoSelecionado("");
     setQuantidade(1);
     setLargura(undefined);
     setAltura(undefined);
     setUnidade("un");
+    setDescricao("");
   };
 
-  // Remover item do pedido
   const removerItem = (index: number) => {
     const novosItens = [...itensPedido];
     novosItens.splice(index, 1);
@@ -172,7 +166,6 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
     calcularTotal(novosItens, descontoCliente);
   };
 
-  // Calcular o total do pedido
   const calcularTotal = (itens: ItemPedido[], descontoPercentual: number = 0) => {
     const novoTotal = calcularTotalPedido(itens, descontoPercentual);
     setTotal(novoTotal);
@@ -232,10 +225,12 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
                     largura={largura}
                     altura={altura}
                     unidade={unidade}
+                    descricao={descricao}
                     handleProdutoChange={handleProdutoChange}
                     setQuantidade={setQuantidade}
                     setLargura={setLargura}
                     setAltura={setAltura}
+                    setDescricao={setDescricao}
                     adicionarItem={adicionarItem}
                   />
 
