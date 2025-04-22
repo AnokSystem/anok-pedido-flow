@@ -152,52 +152,101 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
     try {
       const doc = new jsPDF();
       
+      // Set up for company info next to logo
+      let startY = 15;
+      let logoWidth = 0;
+      
       // Add company logo if exists
       if (empresa?.logo) {
         try {
-          doc.addImage(empresa.logo, 'JPEG', 14, 10, 40, 20);
+          // Add the logo to the left side
+          logoWidth = 40;
+          doc.addImage(empresa.logo, 'JPEG', 14, startY, logoWidth, 20);
         } catch (e) {
           console.error('Erro ao adicionar logo:', e);
         }
       }
       
-      // Add company info
+      // Add company info next to logo
       doc.setFontSize(10);
       if (empresa) {
-        doc.text(`${empresa.nome_empresa}`, 14, 35);
-        if (empresa.cnpj) doc.text(`CNPJ: ${formatarCpfCnpj(empresa.cnpj)}`, 14, 40);
-        if (empresa.endereco) doc.text(`Endereço: ${empresa.endereco}`, 14, 45);
-        if (empresa.contato) doc.text(`Contato: ${empresa.contato}`, 14, 50);
-        if (empresa.email) doc.text(`Email: ${empresa.email}`, 14, 55);
+        // Position company info to the right of the logo
+        const infoX = logoWidth > 0 ? 60 : 14; // If logo exists, start text after logo
+        
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.text(`${empresa.nome_empresa}`, infoX, startY + 5);
+        doc.setFont(undefined, 'normal');
+        doc.setFontSize(10);
+        
+        let currentY = startY + 10;
+        if (empresa.cnpj) {
+          doc.text(`CNPJ: ${formatarCpfCnpj(empresa.cnpj)}`, infoX, currentY);
+          currentY += 5;
+        }
+        if (empresa.endereco) {
+          doc.text(`Endereço: ${empresa.endereco}`, infoX, currentY);
+          currentY += 5;
+        }
+        if (empresa.contato) {
+          doc.text(`Contato: ${empresa.contato}`, infoX, currentY);
+          currentY += 5;
+        }
+        if (empresa.email) {
+          doc.text(`Email: ${empresa.email}`, infoX, currentY);
+          currentY += 5;
+        }
+        
+        startY = Math.max(startY + 25, currentY + 5); // Update startY to be below both logo and company info
       }
       
       // Add title
       doc.setFontSize(16);
-      doc.text(`PEDIDO: ${pedido.numero_pedido}`, 14, 65);
+      doc.setFont(undefined, 'bold');
+      doc.text(`PEDIDO: ${pedido.numero_pedido}`, 14, startY);
+      doc.setFont(undefined, 'normal');
+      startY += 10;
       
       // Add customer info
       doc.setFontSize(11);
-      doc.text(`Cliente: ${pedido.cliente?.nome || 'N/A'}`, 14, 75);
+      doc.text(`Cliente: ${pedido.cliente?.nome || 'N/A'}`, 14, startY);
+      startY += 5;
+      
       if (pedido.cliente?.cpf_cnpj) {
-        doc.text(`CPF/CNPJ: ${formatarCpfCnpj(pedido.cliente.cpf_cnpj)}`, 14, 80);
+        doc.text(`CPF/CNPJ: ${formatarCpfCnpj(pedido.cliente.cpf_cnpj)}`, 14, startY);
+        startY += 5;
       }
       if (pedido.cliente?.contato) {
-        doc.text(`Contato: ${pedido.cliente.contato}`, 14, 85);
+        doc.text(`Contato: ${pedido.cliente.contato}`, 14, startY);
+        startY += 5;
       }
       if (pedido.cliente?.email) {
-        doc.text(`Email: ${pedido.cliente.email}`, 14, 90);
+        doc.text(`Email: ${pedido.cliente.email}`, 14, startY);
+        startY += 5;
       }
-      doc.text(`Data de Emissão: ${formatarData(pedido.data_emissao)}`, 14, 95);
+      
+      doc.text(`Data de Emissão: ${formatarData(pedido.data_emissao)}`, 14, startY);
+      startY += 5;
+      
       if (pedido.data_entrega) {
-        doc.text(`Data de Entrega: ${formatarData(pedido.data_entrega)}`, 14, 100);
+        doc.text(`Data de Entrega: ${formatarData(pedido.data_entrega)}`, 14, startY);
+        startY += 5;
       }
-      doc.text(`Status: ${pedido.status}`, 14, 105);
+      
+      doc.text(`Status: ${pedido.status}`, 14, startY);
+      startY += 10;
       
       // Add description if exists
-      let startY = 110;
       if (pedido.descricao) {
-        doc.text(`Descrição: ${pedido.descricao}`, 14, startY);
-        startY += 10;
+        doc.setFontSize(11);
+        doc.setFont(undefined, 'bold');
+        doc.text('Descrição:', 14, startY);
+        doc.setFont(undefined, 'normal');
+        startY += 5;
+        
+        const splitDescription = doc.splitTextToSize(pedido.descricao, 180);
+        doc.text(splitDescription, 14, startY);
+        startY += splitDescription.length * 5 + 5;
       }
       
       // Add items table
@@ -292,19 +341,23 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
           {empresa && (
             <Card className="border-none shadow-none print-mb-4">
               <CardContent className="p-0">
-                <div className="flex flex-col items-center text-center mb-4">
+                <div className="flex flex-row items-center mb-4">
                   {empresa.logo && (
-                    <img 
-                      src={empresa.logo} 
-                      alt={empresa.nome_empresa} 
-                      className="max-h-20 mb-2" 
-                    />
+                    <div className="mr-4">
+                      <img 
+                        src={empresa.logo} 
+                        alt={empresa.nome_empresa} 
+                        className="max-h-20" 
+                      />
+                    </div>
                   )}
-                  <h2 className="text-lg font-bold">{empresa.nome_empresa}</h2>
-                  {empresa.cnpj && <p className="text-sm">{formatarCpfCnpj(empresa.cnpj)}</p>}
-                  {empresa.endereco && <p className="text-sm">{empresa.endereco}</p>}
-                  {empresa.contato && <p className="text-sm">Contato: {empresa.contato}</p>}
-                  {empresa.email && <p className="text-sm">Email: {empresa.email}</p>}
+                  <div className="flex flex-col">
+                    <h2 className="text-lg font-bold">{empresa.nome_empresa}</h2>
+                    {empresa.cnpj && <p className="text-sm">{formatarCpfCnpj(empresa.cnpj)}</p>}
+                    {empresa.endereco && <p className="text-sm">{empresa.endereco}</p>}
+                    {empresa.contato && <p className="text-sm">Contato: {empresa.contato}</p>}
+                    {empresa.email && <p className="text-sm">Email: {empresa.email}</p>}
+                  </div>
                 </div>
               </CardContent>
             </Card>

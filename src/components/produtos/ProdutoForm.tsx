@@ -46,22 +46,7 @@ export function ProdutoForm({ open, onOpenChange, onSubmit, produto, isLoading }
   });
 
   const handleSubmit = (data: ProdutoFormData) => {
-    // Convert preco_unitario string to number
-    const produtoData = {
-      ...data,
-      preco_unitario: Number(data.preco_unitario),
-    };
-    
-    if (editMode && produto) {
-      // Editar produto existente
-      onSubmit({
-        ...produto,
-        ...produtoData,
-      });
-    } else {
-      // Adicionar novo produto
-      onSubmit(produtoData);
-    }
+    onSubmit(data);
   };
 
   return (
