@@ -45,7 +45,7 @@ export function ProdutoForm({ open, onOpenChange, onSubmit, produto, isLoading, 
       nome: produto?.nome || "",
       descricao: produto?.descricao || "",
       unidade: produto?.unidade || "un", // Default to "un" instead of empty string
-      preco_unitario: produto?.preco_unitario?.toString() || "0",
+      preco_unitario: produto?.preco_unitario ? produto.preco_unitario.toString() : "0",
     },
   });
 
@@ -55,7 +55,7 @@ export function ProdutoForm({ open, onOpenChange, onSubmit, produto, isLoading, 
         nome: produto.nome,
         descricao: produto.descricao || "",
         unidade: produto.unidade,
-        preco_unitario: produto.preco_unitario?.toString() || "0",
+        preco_unitario: produto.preco_unitario ? produto.preco_unitario.toString() : "0",
       });
     }
   }, [produto, form]);
