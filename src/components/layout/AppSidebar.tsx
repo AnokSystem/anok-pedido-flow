@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   ChevronRight, 
@@ -10,13 +11,10 @@ import {
   HelpCircle,
   Menu,
   LayoutDashboard,
-  User
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { supabase } from '@/integrations/supabase/client';
 
 type NavItemProps = {
   to: string;
@@ -58,39 +56,6 @@ const NavItem = ({ to, icon: Icon, label, collapsed }: NavItemProps) => {
 
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
-  const [profile, setProfile] = useState<{ first_name?: string; last_name?: string } | null>(null);
-  const [email, setEmail] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setEmail(user.email);
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('first_name, last_name')
-          .eq('id', user.id)
-          .single();
-        setProfile(profileData);
-      }
-    };
-
-    fetchProfile();
-  }, []);
-
-  const getInitials = () => {
-    if (profile?.first_name || profile?.last_name) {
-      return `${(profile.first_name?.[0] || '').toUpperCase()}${(profile.last_name?.[0] || '').toUpperCase()}`;
-    }
-    return email ? email[0].toUpperCase() : 'A';
-  };
-
-  const getDisplayName = () => {
-    if (profile?.first_name || profile?.last_name) {
-      return `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
-    }
-    return 'Admin';
-  };
 
   return (
     <div 
@@ -118,26 +83,9 @@ export function AppSidebar() {
         <NavItem to="/clientes" icon={Users} label="Clientes" collapsed={collapsed} />
         <NavItem to="/produtos" icon={Package} label="Produtos" collapsed={collapsed} />
         <NavItem to="/pedidos" icon={FileText} label="Pedidos" collapsed={collapsed} />
-        <NavItem to="/perfil" icon={User} label="Meu Perfil" collapsed={collapsed} />
         <NavItem to="/configuracoes" icon={Settings} label="Configurações" collapsed={collapsed} />
         <NavItem to="/ajuda" icon={HelpCircle} label="Ajuda" collapsed={collapsed} />
       </nav>
-
-      <div className="p-2 border-t border-sidebar-border">
-        <div className="flex items-center gap-3 p-2">
-          <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-anok-500 text-white">
-              {getInitials()}
-            </AvatarFallback>
-          </Avatar>
-          {!collapsed && (
-            <div className="flex-1 animate-fade-in min-w-0">
-              <p className="text-sm font-medium truncate">{getDisplayName()}</p>
-              <p className="text-xs text-sidebar-foreground/70 truncate">{email}</p>
-            </div>
-          )}
-        </div>
-      </div>
     </div>
   );
 }
