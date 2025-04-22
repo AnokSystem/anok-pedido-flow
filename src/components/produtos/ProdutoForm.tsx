@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,8 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Produto } from "@/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
-const produtoSchema = z.object({
+const produtoFormSchema = z.object({
   nome: z.string().min(1, "O nome é obrigatório"),
   unidade: z.enum(["un", "m²", "kg", "l"], {
     required_error: "Selecione uma unidade de medida",
@@ -22,7 +23,7 @@ const produtoSchema = z.object({
   descricao: z.string().optional(),
 });
 
-type ProdutoFormData = z.infer<typeof produtoSchema>;
+type ProdutoFormData = z.infer<typeof produtoFormSchema>;
 
 interface ProdutoFormProps {
   open: boolean;
@@ -30,35 +31,50 @@ interface ProdutoFormProps {
   onSubmit: (data: ProdutoFormData) => void;
   produto?: Produto;
   isLoading: boolean;
+  onSuccess: () => void;
 }
 
-export function ProdutoForm({ open, onOpenChange, onSubmit, produto, isLoading }: ProdutoFormProps) {
+export function ProdutoForm({ open, onOpenChange, onSubmit, produto, isLoading, onSuccess }: ProdutoFormProps) {
+  const { toast } = useToast();
   const editMode = !!produto;
   
   const form = useForm<ProdutoFormData>({
-    resolver: zodResolver(produtoSchema),
+    resolver: zodResolver(produtoFormSchema),
     defaultValues: {
       nome: produto?.nome || "",
-      unidade: produto?.unidade || "un",
-      preco_unitario: produto?.preco_unitario ? String(produto.preco_unitario).replace('.', ',') : "",
       descricao: produto?.descricao || "",
+      unidade: produto?.unidade || "",
+      preco_unitario: produto?.preco_unitario || 0,
     },
   });
 
-  // Fix: Update form when produto changes
   useEffect(() => {
     if (produto) {
       form.reset({
         nome: produto.nome,
-        unidade: produto.unidade,
-        preco_unitario: String(produto.preco_unitario).replace('.', ','),
         descricao: produto.descricao || "",
+        unidade: produto.unidade,
+        preco_unitario: Number(produto.preco_unitario),
       });
     }
   }, [produto, form]);
 
-  const handleSubmit = (data: ProdutoFormData) => {
-    onSubmit(data);
+  const handleSubmit = async (data: ProdutoFormData) => {
+    try {
+      const values = {
+        ...data,
+        preco_unitario: Number(data.preco_unitario),
+      };
+
+      onSubmit(values);
+      onSuccess();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao salvar",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   return (

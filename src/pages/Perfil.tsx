@@ -1,11 +1,9 @@
-
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PageHeader } from "@/components/layout/PageHeader";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
@@ -98,12 +96,14 @@ export default function Perfil() {
 
   return (
     <div className="container mx-auto py-6">
-      <PageHeader
-        title="Meu Perfil"
-        description="Gerencie suas informações pessoais"
-      />
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">Meu Perfil</h1>
+          <p className="text-muted-foreground">Gerencie suas informações pessoais</p>
+        </div>
+      </div>
       
-      <div className="grid gap-6 mt-6">
+      <div className="grid gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Informações Pessoais</CardTitle>
