@@ -43,6 +43,17 @@ export function PedidoItemForm({
 }: PedidoItemFormProps) {
   return (
     <div className="grid grid-cols-1 gap-3">
+      {/* Description field moved to the top */}
+      <div className="col-span-full">
+        <label className="block text-sm font-medium mb-1">Informações adicionais / Material</label>
+        <Textarea 
+          placeholder="Descreva informações sobre o item ou material utilizado..."
+          value={descricao}
+          onChange={(e) => setDescricao(e.target.value)}
+          className="min-h-[60px]"
+        />
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
         <div className="md:col-span-2">
           <label className="block text-sm font-medium mb-1">Produto</label>
@@ -98,17 +109,6 @@ export function PedidoItemForm({
             </div>
           </>
         )}
-      </div>
-
-      {/* New description field */}
-      <div className="col-span-full">
-        <label className="block text-sm font-medium mb-1">Informações adicionais / Material</label>
-        <Textarea 
-          placeholder="Descreva informações sobre o item ou material utilizado..."
-          value={descricao}
-          onChange={(e) => setDescricao(e.target.value)}
-          className="min-h-[60px]"
-        />
       </div>
 
       <div className="flex justify-end">

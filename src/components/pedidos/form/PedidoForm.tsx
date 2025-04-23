@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -40,8 +41,8 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
   const [itensPedido, setItensPedido] = useState<ItemPedido[]>([]);
   const [produtoSelecionado, setProdutoSelecionado] = useState("");
   const [quantidade, setQuantidade] = useState<number>(1);
-  const [largura, setLargura] = useState<number | undefined>(undefined);
-  const [altura, setAltura] = useState<number | undefined>(undefined);
+  const [largura, setLargura] = useState<number | undefined>(0.5);
+  const [altura, setAltura] = useState<number | undefined>(0.5);
   const [unidade, setUnidade] = useState<string>("un");
   const [total, setTotal] = useState<number>(0);
   const [clienteSelecionado, setClienteSelecionado] = useState<string>("");
@@ -100,6 +101,11 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
     const produto = produtos?.find(p => p.id === produtoId);
     if (produto) {
       setUnidade(produto.unidade);
+      // Set default values for width and height when the unit is 'm²'
+      if (produto.unidade === 'm²') {
+        setLargura(0.5);
+        setAltura(0.5);
+      }
     }
   };
 
@@ -151,10 +157,11 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
     setItensPedido(novosItens);
     calcularTotal(novosItens, descontoCliente);
     
+    // Reset fields after adding an item
     setProdutoSelecionado("");
     setQuantidade(1);
-    setLargura(undefined);
-    setAltura(undefined);
+    setLargura(0.5);
+    setAltura(0.5);
     setUnidade("un");
     setDescricao("");
   };
