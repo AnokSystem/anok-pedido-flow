@@ -45,7 +45,7 @@ export function PedidoItemForm({
     <div className="grid grid-cols-1 gap-3">
       {/* Description field moved to the top */}
       <div className="col-span-full">
-        <label className="block text-sm font-medium mb-1">Informações adicionais / Material</label>
+        <label className="block text-sm font-medium mb-1">Descrição do Item</label>
         <Textarea 
           placeholder="Descreva informações sobre o item ou material utilizado..."
           value={descricao}

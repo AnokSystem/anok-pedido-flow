@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Pedido, ItemPedido } from '@/types';
@@ -135,7 +136,7 @@ export function usePedidos() {
           const itensComPedidoId = pedido.itens.map(item => ({
             pedido_id: novoPedido.id,
             produto_id: item.produto_id,
-            descricao: item.descricao,
+            descricao: item.descricao || '', // Ensure descricao is included
             quantidade: Number(item.quantidade),
             unidade: item.unidade,
             valor_unit: Number(item.valor_unit),
@@ -225,7 +226,7 @@ export function usePedidos() {
             const itensParaInserir = pedido.itens.map(item => ({
               pedido_id: pedido.id,
               produto_id: item.produto_id,
-              descricao: item.descricao,
+              descricao: item.descricao || '', // Ensure descricao is included
               quantidade: Number(item.quantidade),
               unidade: item.unidade,
               largura: item.largura ? Number(item.largura) : null,
