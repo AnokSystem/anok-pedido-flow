@@ -1,18 +1,19 @@
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { empresaMock } from "@/lib/mockData";
 import { supabase } from "@/integrations/supabase/client";
 import { Empresa } from "@/types";
 import { toast } from "@/hooks/use-toast";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Upload } from "lucide-react";
+import { UsuariosTab } from "@/components/configuracoes/UsuariosTab";
+import { WebhooksTab } from "@/components/configuracoes/WebhooksTab";
+import { empresaMock } from "@/lib/mockData";
 
 export default function Configuracoes() {
   const [empresa, setEmpresa] = useState<Empresa | null>(null);
@@ -162,8 +163,8 @@ export default function Configuracoes() {
       <Tabs defaultValue="empresa" className="space-y-4">
         <TabsList>
           <TabsTrigger value="empresa">Dados da Empresa</TabsTrigger>
-          <TabsTrigger value="webhook">Webhooks</TabsTrigger>
           <TabsTrigger value="usuarios">Usuários</TabsTrigger>
+          <TabsTrigger value="webhook">Webhooks</TabsTrigger>
         </TabsList>
         
         <TabsContent value="empresa" className="space-y-4">
@@ -287,105 +288,14 @@ export default function Configuracoes() {
           </Card>
         </TabsContent>
         
-        <TabsContent value="webhook" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Configuração de Webhook</CardTitle>
-              <CardDescription>
-                Configure webhooks para integrar com outros sistemas quando um pedido for criado ou alterado.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="webhook_url">URL do Webhook</Label>
-                <Input id="webhook_url" placeholder="https://" />
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch id="webhook_ativo" />
-                <Label htmlFor="webhook_ativo">Webhook Ativo</Label>
-              </div>
-              <div className="space-y-2">
-                <Label>Dados a Enviar</Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <div className="flex items-center space-x-2">
-                    <Switch id="webhook_numero_pedido" defaultChecked />
-                    <Label htmlFor="webhook_numero_pedido">Número do Pedido</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch id="webhook_cliente" defaultChecked />
-                    <Label htmlFor="webhook_cliente">Dados do Cliente</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch id="webhook_itens" defaultChecked />
-                    <Label htmlFor="webhook_itens">Itens do Pedido</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch id="webhook_valor" defaultChecked />
-                    <Label htmlFor="webhook_valor">Valor Total</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch id="webhook_pdf" defaultChecked />
-                    <Label htmlFor="webhook_pdf">Link do PDF</Label>
-                  </div>
-                </div>
-              </div>
-              <div className="pt-4">
-                <Button>Salvar Webhook</Button>
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="usuarios" className="space-y-4">
+          <UsuariosTab />
         </TabsContent>
         
-        <TabsContent value="usuarios" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Gerenciamento de Usuários</CardTitle>
-              <CardDescription>
-                Adicione e gerencie usuários que têm acesso ao sistema.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Usuários do Sistema</Label>
-                <div className="rounded-md border">
-                  <div className="p-4 flex justify-between items-center border-b">
-                    <div>
-                      <p className="font-medium">Admin</p>
-                      <p className="text-sm text-muted-foreground">admin@anok.com</p>
-                    </div>
-                    <Badge>Administrador</Badge>
-                  </div>
-                  <div className="p-4 flex justify-between items-center">
-                    <div>
-                      <p className="font-medium">Vendedor</p>
-                      <p className="text-sm text-muted-foreground">vendedor@anok.com</p>
-                    </div>
-                    <Badge variant="outline">Vendedor</Badge>
-                  </div>
-                </div>
-              </div>
-              <div className="pt-4">
-                <Button>Adicionar Usuário</Button>
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="webhook" className="space-y-4">
+          <WebhooksTab />
         </TabsContent>
       </Tabs>
     </div>
-  );
-}
-
-// Temos que declarar o Badge aqui porque não foi importado
-function Badge({ children, variant = "default", className }: { children: React.ReactNode, variant?: "default" | "outline", className?: string }) {
-  const baseClasses = "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium";
-  const variantClasses = {
-    default: "bg-primary text-primary-foreground",
-    outline: "border border-input bg-background"
-  };
-  
-  return (
-    <span className={`${baseClasses} ${variantClasses[variant]} ${className || ""}`}>
-      {children}
-    </span>
   );
 }
