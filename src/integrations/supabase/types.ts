@@ -200,6 +200,7 @@ export type Database = {
           criado_por: string | null
           data_emissao: string
           data_entrega: string | null
+          descricao: string | null
           empresa_id: string | null
           id: string
           numero_pedido: string
@@ -212,6 +213,7 @@ export type Database = {
           criado_por?: string | null
           data_emissao?: string
           data_entrega?: string | null
+          descricao?: string | null
           empresa_id?: string | null
           id?: string
           numero_pedido: string
@@ -224,6 +226,7 @@ export type Database = {
           criado_por?: string | null
           data_emissao?: string
           data_entrega?: string | null
+          descricao?: string | null
           empresa_id?: string | null
           id?: string
           numero_pedido?: string

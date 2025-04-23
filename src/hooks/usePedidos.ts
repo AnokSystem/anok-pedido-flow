@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Pedido, ItemPedido } from '@/types';
@@ -12,7 +11,6 @@ export function usePedidos() {
   const { data: pedidos, isLoading } = useQuery({
     queryKey: ['pedidos'],
     queryFn: async () => {
-      // Primeiro, buscar os pedidos com informações do cliente
       const { data: pedidosData, error: pedidosError } = await supabase
         .from('pedidos')
         .select(`
@@ -30,7 +28,6 @@ export function usePedidos() {
         throw pedidosError;
       }
 
-      // Para cada pedido, buscar seus itens
       const pedidosCompletos = await Promise.all(
         pedidosData.map(async (pedido) => {
           const { data: itensData, error: itensError } = await supabase
@@ -62,7 +59,6 @@ export function usePedidos() {
 
   const getPedidoById = async (id: string): Promise<Pedido | null> => {
     try {
-      // Buscar o pedido com informações do cliente
       const { data: pedidoData, error: pedidoError } = await supabase
         .from('pedidos')
         .select(`
@@ -77,7 +73,6 @@ export function usePedidos() {
         return null;
       }
 
-      // Buscar os itens do pedido
       const { data: itensData, error: itensError } = await supabase
         .from('itens_pedido')
         .select(`
@@ -108,11 +103,9 @@ export function usePedidos() {
     mutationFn: async (pedido: Omit<Pedido, 'id' | 'itens'> & { itens: Omit<ItemPedido, 'id' | 'pedido_id'>[] }) => {
       console.log('Criando pedido:', pedido);
       
-      // Buscar desconto do cliente, se houver
       const cliente = clientes?.find(c => c.id === pedido.cliente_id);
       const descontoCliente = cliente?.desconto_especial || 0;
       
-      // Preparar dados para inserção
       const pedidoParaInserir = {
         numero_pedido: pedido.numero_pedido,
         cliente_id: pedido.cliente_id,
@@ -127,7 +120,6 @@ export function usePedidos() {
       };
       
       try {
-        // Criar o pedido primeiro
         const { data: novoPedido, error: pedidoError } = await supabase
           .from('pedidos')
           .insert(pedidoParaInserir)
@@ -139,7 +131,6 @@ export function usePedidos() {
           throw pedidoError;
         }
 
-        // Adicionar os itens do pedido
         if (pedido.itens && pedido.itens.length > 0) {
           const itensComPedidoId = pedido.itens.map(item => ({
             pedido_id: novoPedido.id,
@@ -190,11 +181,9 @@ export function usePedidos() {
     mutationFn: async (pedido: Pedido) => {
       console.log('Atualizando pedido:', pedido);
       
-      // Buscar desconto do cliente, se houver
       const cliente = clientes?.find(c => c.id === pedido.cliente_id);
       const descontoCliente = cliente?.desconto_especial || 0;
       
-      // Preparar dados para atualização
       const pedidoParaAtualizar = {
         numero_pedido: pedido.numero_pedido,
         cliente_id: pedido.cliente_id,
@@ -209,7 +198,6 @@ export function usePedidos() {
       };
       
       try {
-        // Atualizar o pedido
         const { data: pedidoAtualizado, error: pedidoError } = await supabase
           .from('pedidos')
           .update(pedidoParaAtualizar)
@@ -222,9 +210,7 @@ export function usePedidos() {
           throw pedidoError;
         }
 
-        // Remover itens existentes e adicionar os novos
         if (pedido.itens) {
-          // Primeiro remover todos os itens existentes
           const { error: deleteError } = await supabase
             .from('itens_pedido')
             .delete()
@@ -235,7 +221,6 @@ export function usePedidos() {
             throw deleteError;
           }
 
-          // Adicionar os novos itens, se houver
           if (pedido.itens.length > 0) {
             const itensParaInserir = pedido.itens.map(item => ({
               pedido_id: pedido.id,
@@ -286,7 +271,6 @@ export function usePedidos() {
   const deletePedido = useMutation({
     mutationFn: async (id: string) => {
       try {
-        // Primeiro remover todos os itens do pedido
         const { error: deleteItensError } = await supabase
           .from('itens_pedido')
           .delete()
@@ -297,7 +281,6 @@ export function usePedidos() {
           throw deleteItensError;
         }
 
-        // Depois remover o pedido
         const { error: deletePedidoError } = await supabase
           .from('pedidos')
           .delete()
