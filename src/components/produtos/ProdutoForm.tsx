@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -7,21 +6,25 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Produto } from "@/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Produto } from "@/types";
+import { Loader2 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 const produtoFormSchema = z.object({
   nome: z.string().min(1, "O nome é obrigatório"),
-  unidade: z.enum(["un", "m²", "kg", "l"], {
-    required_error: "Selecione uma unidade de medida",
-  }),
-  preco_unitario: z.string()
-    .min(1, "Informe o preço unitário")
-    .transform(val => parseFloat(val.replace(',', '.'))),
   descricao: z.string().optional(),
+  unidade: z.string().min(1, "A unidade é obrigatória"),
+  preco_unitario: z.string().refine((value) => {
+    try {
+      const num = parseFloat(value);
+      return !isNaN(num);
+    } catch (e) {
+      return false;
+    }
+  }, "Preço unitário inválido"),
 });
 
 type ProdutoFormData = z.infer<typeof produtoFormSchema>;
@@ -29,52 +32,101 @@ type ProdutoFormData = z.infer<typeof produtoFormSchema>;
 interface ProdutoFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: ProdutoFormData) => void;
-  produto?: Produto;
-  isLoading: boolean;
-  onSuccess: () => void;
+  produto: Produto | null;
+  onSuccess: (produto: Produto, isNew: boolean) => void;
 }
 
-export function ProdutoForm({ open, onOpenChange, onSubmit, produto, isLoading, onSuccess }: ProdutoFormProps) {
+export function ProdutoForm({ open, onOpenChange, produto, onSuccess }: ProdutoFormProps) {
   const { toast } = useToast();
-  const editMode = !!produto;
-  
+  const [isSaving, setIsSaving] = useState(false);
+  const isEditing = !!produto;
+
   const form = useForm<ProdutoFormData>({
     resolver: zodResolver(produtoFormSchema),
     defaultValues: {
       nome: produto?.nome || "",
       descricao: produto?.descricao || "",
-      unidade: produto?.unidade || "un", // Default to "un" instead of empty string
-      preco_unitario: produto?.preco_unitario ? produto.preco_unitario.toString() : "0",
+      unidade: produto?.unidade || "",
+      preco_unitario: produto?.preco_unitario?.toString() || "0",
     },
   });
 
-  useEffect(() => {
+  // Atualiza o formulário quando o produto muda
+  React.useEffect(() => {
     if (produto) {
       form.reset({
         nome: produto.nome,
-        descricao: produto.descricao || "",
+        descricao: produto.descricao,
         unidade: produto.unidade,
-        preco_unitario: produto.preco_unitario ? produto.preco_unitario.toString() : "0",
+        preco_unitario: produto.preco_unitario.toString(),
+      });
+    } else {
+      form.reset({
+        nome: "",
+        descricao: "",
+        unidade: "",
+        preco_unitario: "0",
       });
     }
   }, [produto, form]);
 
-  const handleSubmit = async (data: ProdutoFormData) => {
+  const onSubmit = async (data: ProdutoFormData) => {
+    setIsSaving(true);
     try {
-      const values = {
-        ...data,
-        preco_unitario: Number(data.preco_unitario),
-      };
+      if (isEditing) {
+        // Atualizar produto existente
+        const { data: updatedData, error } = await supabase
+          .from('produtos')
+          .update({
+            nome: data.nome,
+            descricao: data.descricao,
+            unidade: data.unidade,
+            preco_unitario: Number(data.preco_unitario),
+          })
+          .eq('id', produto.id)
+          .select()
+          .single();
 
-      onSubmit(values);
-      onSuccess();
+        if (error) throw error;
+
+        toast({
+          title: "Produto atualizado",
+          description: "As informações do produto foram atualizadas com sucesso.",
+        });
+
+        onSuccess(updatedData as Produto, false);
+      } else {
+        // Criar novo produto
+        const { data: newData, error } = await supabase
+          .from('produtos')
+          .insert({
+            nome: data.nome,
+            descricao: data.descricao,
+            unidade: data.unidade,
+            preco_unitario: Number(data.preco_unitario), // Garantir que é um number
+            empresa_id: "00000000-0000-0000-0000-000000000000" // Placeholder, deve ser substituído pelo ID real
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        toast({
+          title: "Produto criado",
+          description: "O novo produto foi criado com sucesso.",
+        });
+
+        onSuccess(newData as Produto, true);
+      }
     } catch (error: any) {
+      console.error('Erro ao salvar produto:', error);
       toast({
         title: "Erro ao salvar",
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -82,63 +134,19 @@ export function ProdutoForm({ open, onOpenChange, onSubmit, produto, isLoading, 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{editMode ? "Editar Produto" : "Novo Produto"}</DialogTitle>
+          <DialogTitle>{isEditing ? "Editar Produto" : "Novo Produto"}</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="nome"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome do Produto</FormLabel>
+                  <FormLabel>Nome</FormLabel>
                   <FormControl>
                     <Input placeholder="Digite o nome do produto" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="unidade"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Unidade de Medida</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a unidade" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="un">Unidade (un)</SelectItem>
-                      <SelectItem value="m²">Metro Quadrado (m²)</SelectItem>
-                      <SelectItem value="kg">Quilograma (kg)</SelectItem>
-                      <SelectItem value="l">Litro (l)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="preco_unitario"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Preço Unitário (R$)</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="0,00" 
-                      {...field} 
-                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -150,12 +158,40 @@ export function ProdutoForm({ open, onOpenChange, onSubmit, produto, isLoading, 
               name="descricao"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Descrição (opcional)</FormLabel>
+                  <FormLabel>Descrição</FormLabel>
                   <FormControl>
-                    <Textarea 
-                      placeholder="Descreva o produto..."
-                      className="resize-none"
-                      {...field}
+                    <Textarea placeholder="Digite a descrição do produto" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="unidade"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Unidade</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ex: Kg, Unidade, Metro" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="preco_unitario"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Preço Unitário</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="0.00" 
+                      type="number"
+                      {...field} 
                     />
                   </FormControl>
                   <FormMessage />
@@ -168,12 +204,17 @@ export function ProdutoForm({ open, onOpenChange, onSubmit, produto, isLoading, 
                 type="button" 
                 variant="outline" 
                 onClick={() => onOpenChange(false)}
-                disabled={isLoading}
+                disabled={isSaving}
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Salvando..." : editMode ? "Atualizar" : "Salvar"}
+              <Button type="submit" disabled={isSaving}>
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Salvando...
+                  </>
+                ) : isEditing ? "Atualizar" : "Salvar"}
               </Button>
             </DialogFooter>
           </form>

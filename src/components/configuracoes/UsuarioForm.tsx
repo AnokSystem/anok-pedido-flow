@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -45,7 +45,7 @@ export function UsuarioForm({ open, onOpenChange, usuario, onSuccess }: UsuarioF
   });
 
   // Atualiza o formulário quando o usuário muda
-  React.useEffect(() => {
+  useEffect(() => {
     if (usuario) {
       form.reset({
         nome: usuario.nome,
