@@ -1,18 +1,16 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Pedido, ItemPedido } from '@/types';
+import { Pedido, Cliente, ItemPedido } from '@/types';
 import { toast } from '@/hooks/use-toast';
-import { useClientes } from '@/hooks/useClientes';
 
 export function usePedidos() {
   const queryClient = useQueryClient();
-  const { clientes } = useClientes();
 
   const { data: pedidos, isLoading } = useQuery({
     queryKey: ['pedidos'],
     queryFn: async () => {
-      const { data: pedidosData, error: pedidosError } = await supabase
+      const { data, error } = await supabase
         .from('pedidos')
         .select(`
           *,
@@ -20,47 +18,25 @@ export function usePedidos() {
         `)
         .order('data_emissao', { ascending: false });
 
-      if (pedidosError) {
+      if (error) {
         toast({
           title: 'Erro ao carregar pedidos',
-          description: pedidosError.message,
+          description: error.message,
           variant: 'destructive',
         });
-        throw pedidosError;
+        throw error;
       }
 
-      const pedidosCompletos = await Promise.all(
-        pedidosData.map(async (pedido) => {
-          const { data: itensData, error: itensError } = await supabase
-            .from('itens_pedido')
-            .select(`
-              *,
-              produto:produtos(*)
-            `)
-            .eq('pedido_id', pedido.id);
-
-          if (itensError) {
-            console.error('Erro ao carregar itens do pedido:', itensError);
-            return {
-              ...pedido,
-              itens: [] as ItemPedido[]
-            };
-          }
-
-          return {
-            ...pedido,
-            itens: itensData as ItemPedido[]
-          };
-        })
-      );
-
-      return pedidosCompletos as Pedido[];
+      return data as Pedido[];
     },
   });
 
-  const getPedidoById = async (id: string): Promise<Pedido | null> => {
+  const getPedidoById = async (id: string) => {
+    console.log('Buscando pedido detalhado:', id);
+    
     try {
-      const { data: pedidoData, error: pedidoError } = await supabase
+      // Buscar pedido
+      const { data: pedido, error: pedidoError } = await supabase
         .from('pedidos')
         .select(`
           *,
@@ -69,97 +45,166 @@ export function usePedidos() {
         .eq('id', id)
         .single();
 
-      if (pedidoError) {
-        console.error('Erro ao carregar pedido:', pedidoError);
-        return null;
-      }
-
-      const { data: itensData, error: itensError } = await supabase
+      if (pedidoError) throw pedidoError;
+      
+      // Buscar itens do pedido
+      const { data: itens, error: itensError } = await supabase
         .from('itens_pedido')
         .select(`
           *,
           produto:produtos(*)
         `)
-        .eq('pedido_id', id);
+        .eq('pedido_id', id)
+        .order('id');
 
-      if (itensError) {
-        console.error('Erro ao carregar itens do pedido:', itensError);
-        return {
-          ...pedidoData,
-          itens: []
-        } as Pedido;
-      }
-
-      return {
-        ...pedidoData,
-        itens: itensData
-      } as Pedido;
+      if (itensError) throw itensError;
+      
+      // Combinar pedido com itens
+      return { ...pedido, itens: itens || [] } as Pedido;
     } catch (error) {
-      console.error('Erro ao buscar pedido:', error);
-      return null;
+      console.error('Erro ao buscar pedido por ID:', error);
+      throw error;
+    }
+  };
+
+  // Função para enviar webhook
+  const sendWebhook = async (pedido: Pedido) => {
+    try {
+      // Buscar configuração de webhook
+      const { data: webhookConfig, error: webhookError } = await supabase
+        .from('webhooks')
+        .select('*')
+        .eq('ativado', true)
+        .maybeSingle();
+      
+      if (webhookError) {
+        console.error('Erro ao buscar configuração de webhook:', webhookError);
+        return;
+      }
+      
+      // Se não houver webhook configurado ou não estiver ativo, retornar
+      if (!webhookConfig || !webhookConfig.ativado) {
+        console.log('Nenhum webhook ativo configurado');
+        return;
+      }
+      
+      console.log('Configuração de webhook encontrada:', webhookConfig);
+      
+      // Preparar dados para enviar baseado nos campos selecionados
+      const webhookData: Record<string, any> = {
+        evento: 'pedido_atualizado',
+        timestamp: new Date().toISOString()
+      };
+      
+      // Adicionar campos com base na configuração
+      const camposSelecionados = webhookConfig.campos_selecionados || [];
+      
+      if (camposSelecionados.includes('numero_pedido')) {
+        webhookData.numero_pedido = pedido.numero_pedido;
+      }
+      
+      if (camposSelecionados.includes('cliente') && pedido.cliente) {
+        webhookData.cliente = {
+          nome: pedido.cliente.nome,
+          cpf_cnpj: pedido.cliente.cpf_cnpj,
+          email: pedido.cliente.email,
+          contato: pedido.cliente.contato
+        };
+      }
+      
+      if (camposSelecionados.includes('itens') && pedido.itens) {
+        webhookData.itens = pedido.itens.map(item => ({
+          descricao: item.descricao,
+          quantidade: item.quantidade,
+          unidade: item.unidade,
+          valor_unit: item.valor_unit,
+          valor_total: item.valor_total
+        }));
+      }
+      
+      if (camposSelecionados.includes('valor')) {
+        webhookData.valor_total = pedido.total;
+      }
+      
+      if (camposSelecionados.includes('pdf')) {
+        // Simulação de URL do PDF - em uma implementação real, seria gerado dinamicamente
+        webhookData.pdf_url = `https://seu-dominio.com/pedidos/${pedido.numero_pedido}.pdf`;
+      }
+      
+      console.log('Enviando dados para webhook:', webhookConfig.url_destino);
+      console.log('Dados:', webhookData);
+      
+      // Enviar dados para o webhook configurado
+      const response = await fetch(webhookConfig.url_destino, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(webhookData),
+        // Using no-cors to avoid CORS issues with external services
+        mode: 'no-cors'
+      });
+      
+      console.log('Webhook enviado com sucesso');
+      
+    } catch (error) {
+      console.error('Erro ao enviar webhook:', error);
+      // Não falhar a operação principal se o webhook falhar
     }
   };
 
   const createPedido = useMutation({
-    mutationFn: async (pedido: Omit<Pedido, 'id' | 'itens'> & { itens: Omit<ItemPedido, 'id' | 'pedido_id'>[] }) => {
-      console.log('Criando pedido:', pedido);
+    mutationFn: async (novoPedido: Omit<Pedido, 'id'>) => {
+      console.log('Criando pedido:', novoPedido);
+
+      // 1. Criar pedido
+      const { data: pedidoCriado, error: pedidoError } = await supabase
+        .from('pedidos')
+        .insert({
+          numero_pedido: novoPedido.numero_pedido,
+          cliente_id: novoPedido.cliente_id,
+          data_emissao: novoPedido.data_emissao,
+          data_entrega: novoPedido.data_entrega,
+          total: novoPedido.total,
+          status: novoPedido.status,
+          descricao: novoPedido.descricao,
+          empresa_id: novoPedido.empresa_id || null
+        })
+        .select()
+        .single();
+
+      if (pedidoError) throw pedidoError;
       
-      const cliente = clientes?.find(c => c.id === pedido.cliente_id);
-      const descontoCliente = cliente?.desconto_especial || 0;
+      const pedidoId = pedidoCriado.id;
       
-      const pedidoParaInserir = {
-        numero_pedido: pedido.numero_pedido,
-        cliente_id: pedido.cliente_id,
-        data_emissao: typeof pedido.data_emissao === 'string' ? 
-          pedido.data_emissao : new Date(pedido.data_emissao).toISOString(),
-        data_entrega: pedido.data_entrega ? 
-          (typeof pedido.data_entrega === 'string' ? 
-            pedido.data_entrega : new Date(pedido.data_entrega).toISOString()) : null,
-        total: Number(pedido.total) || 0,
-        status: pedido.status,
-        descricao: pedido.descricao || '',
-      };
-      
-      try {
-        const { data: novoPedido, error: pedidoError } = await supabase
-          .from('pedidos')
-          .insert(pedidoParaInserir)
-          .select()
-          .single();
-
-        if (pedidoError) {
-          console.error('Erro ao criar pedido:', pedidoError);
-          throw pedidoError;
-        }
-
-        if (pedido.itens && pedido.itens.length > 0) {
-          const itensComPedidoId = pedido.itens.map(item => ({
-            pedido_id: novoPedido.id,
-            produto_id: item.produto_id,
-            descricao: item.descricao || '', // Ensure descricao is included
-            quantidade: Number(item.quantidade),
-            unidade: item.unidade,
-            valor_unit: Number(item.valor_unit),
-            valor_total: Number(item.valor_total),
-            largura: item.largura ? Number(item.largura) : null,
-            altura: item.altura ? Number(item.altura) : null
-          }));
-
-          const { error: itensError } = await supabase
-            .from('itens_pedido')
-            .insert(itensComPedidoId);
-
-          if (itensError) {
-            console.error('Erro ao adicionar itens do pedido:', itensError);
-            throw itensError;
-          }
-        }
-
-        return novoPedido;
-      } catch (error) {
-        console.error('Erro ao criar pedido:', error);
-        throw error;
+      // 2. Criar itens do pedido
+      if (novoPedido.itens && novoPedido.itens.length > 0) {
+        const itensParaInserir = novoPedido.itens.map(item => ({
+          pedido_id: pedidoId,
+          produto_id: item.produto_id,
+          descricao: item.descricao,
+          quantidade: item.quantidade,
+          largura: item.largura,
+          altura: item.altura,
+          unidade: item.unidade,
+          valor_unit: item.valor_unit,
+          valor_total: item.valor_total
+        }));
+        
+        const { error: itensError } = await supabase
+          .from('itens_pedido')
+          .insert(itensParaInserir);
+          
+        if (itensError) throw itensError;
       }
+      
+      // 3. Buscar pedido completo
+      const pedidoCompleto = await getPedidoById(pedidoId);
+      
+      // 4. Enviar webhook
+      await sendWebhook(pedidoCompleto);
+      
+      return pedidoCompleto;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pedidos'] });
@@ -182,75 +227,58 @@ export function usePedidos() {
     mutationFn: async (pedido: Pedido) => {
       console.log('Atualizando pedido:', pedido);
       
-      const cliente = clientes?.find(c => c.id === pedido.cliente_id);
-      const descontoCliente = cliente?.desconto_especial || 0;
+      // 1. Atualizar pedido
+      const { error: pedidoError } = await supabase
+        .from('pedidos')
+        .update({
+          numero_pedido: pedido.numero_pedido,
+          cliente_id: pedido.cliente_id,
+          data_emissao: pedido.data_emissao,
+          data_entrega: pedido.data_entrega,
+          total: pedido.total,
+          status: pedido.status,
+          descricao: pedido.descricao
+        })
+        .eq('id', pedido.id);
+        
+      if (pedidoError) throw pedidoError;
       
-      const pedidoParaAtualizar = {
-        numero_pedido: pedido.numero_pedido,
-        cliente_id: pedido.cliente_id,
-        data_emissao: typeof pedido.data_emissao === 'string' ? 
-          pedido.data_emissao : new Date(pedido.data_emissao).toISOString(),
-        data_entrega: pedido.data_entrega ? 
-          (typeof pedido.data_entrega === 'string' ? 
-            pedido.data_entrega : new Date(pedido.data_entrega).toISOString()) : null,
-        total: Number(pedido.total) || 0,
-        status: pedido.status,
-        descricao: pedido.descricao || '',
-      };
+      // 2. Excluir itens existentes
+      const { error: deleteError } = await supabase
+        .from('itens_pedido')
+        .delete()
+        .eq('pedido_id', pedido.id);
+        
+      if (deleteError) throw deleteError;
       
-      try {
-        const { data: pedidoAtualizado, error: pedidoError } = await supabase
-          .from('pedidos')
-          .update(pedidoParaAtualizar)
-          .eq('id', pedido.id)
-          .select()
-          .single();
-
-        if (pedidoError) {
-          console.error('Erro ao atualizar pedido:', pedidoError);
-          throw pedidoError;
-        }
-
-        if (pedido.itens) {
-          const { error: deleteError } = await supabase
-            .from('itens_pedido')
-            .delete()
-            .eq('pedido_id', pedido.id);
-
-          if (deleteError) {
-            console.error('Erro ao remover itens existentes:', deleteError);
-            throw deleteError;
-          }
-
-          if (pedido.itens.length > 0) {
-            const itensParaInserir = pedido.itens.map(item => ({
-              pedido_id: pedido.id,
-              produto_id: item.produto_id,
-              descricao: item.descricao || '', // Ensure descricao is included
-              quantidade: Number(item.quantidade),
-              unidade: item.unidade,
-              largura: item.largura ? Number(item.largura) : null,
-              altura: item.altura ? Number(item.altura) : null,
-              valor_unit: Number(item.valor_unit),
-              valor_total: Number(item.valor_total)
-            }));
-
-            const { error: insertError } = await supabase
-              .from('itens_pedido')
-              .insert(itensParaInserir);
-
-            if (insertError) {
-              console.error('Erro ao inserir novos itens:', insertError);
-              throw insertError;
-            }
-          }
-        }
-
-        return pedidoAtualizado;
-      } catch (error) {
-        console.error('Erro ao atualizar pedido:', error);
-        throw error;
+      // 3. Inserir novos itens
+      if (pedido.itens && pedido.itens.length > 0) {
+        const itensParaInserir = pedido.itens.map(item => ({
+          pedido_id: pedido.id,
+          produto_id: item.produto_id,
+          descricao: item.descricao,
+          quantidade: item.quantidade,
+          largura: item.largura,
+          altura: item.altura,
+          unidade: item.unidade,
+          valor_unit: item.valor_unit,
+          valor_total: item.valor_total
+        }));
+        
+        const { error: itensError } = await supabase
+          .from('itens_pedido')
+          .insert(itensParaInserir);
+          
+        if (itensError) throw itensError;
       }
+      
+      // 4. Buscar pedido atualizado
+      const pedidoAtualizado = await getPedidoById(pedido.id);
+      
+      // 5. Enviar webhook
+      await sendWebhook(pedidoAtualizado);
+      
+      return pedidoAtualizado;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pedidos'] });
@@ -271,39 +299,45 @@ export function usePedidos() {
 
   const deletePedido = useMutation({
     mutationFn: async (id: string) => {
-      try {
-        const { error: deleteItensError } = await supabase
-          .from('itens_pedido')
-          .delete()
-          .eq('pedido_id', id);
-
-        if (deleteItensError) {
-          console.error('Erro ao remover itens do pedido:', deleteItensError);
-          throw deleteItensError;
-        }
-
-        const { error: deletePedidoError } = await supabase
-          .from('pedidos')
-          .delete()
-          .eq('id', id);
-
-        if (deletePedidoError) {
-          console.error('Erro ao remover pedido:', deletePedidoError);
-          throw deletePedidoError;
-        }
-
-        return id;
-      } catch (error) {
-        console.error('Erro ao excluir pedido:', error);
-        throw error;
-      }
+      // 1. Buscar pedido antes de excluir para enviar webhook
+      const pedido = await getPedidoById(id);
+      
+      // 2. Excluir itens do pedido
+      const { error: itensError } = await supabase
+        .from('itens_pedido')
+        .delete()
+        .eq('pedido_id', id);
+        
+      if (itensError) throw itensError;
+      
+      // 3. Excluir pedido
+      const { error } = await supabase
+        .from('pedidos')
+        .delete()
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      return pedido;
     },
-    onSuccess: () => {
+    onSuccess: (pedido) => {
       queryClient.invalidateQueries({ queryKey: ['pedidos'] });
       toast({
         title: 'Pedido excluído',
         description: 'O pedido foi excluído com sucesso.',
       });
+      
+      // Enviar webhook com evento de exclusão
+      try {
+        // Modificar o pedido para indicar que foi excluído
+        const pedidoExcluido = {
+          ...pedido,
+          evento: 'pedido_excluido'
+        };
+        sendWebhook(pedidoExcluido as Pedido);
+      } catch (error) {
+        console.error('Erro ao enviar webhook de exclusão:', error);
+      }
     },
     onError: (error) => {
       console.error('Erro ao excluir pedido:', error);
@@ -318,9 +352,9 @@ export function usePedidos() {
   return {
     pedidos,
     isLoading,
+    getPedidoById,
     createPedido,
     updatePedido,
-    deletePedido,
-    getPedidoById,
+    deletePedido
   };
 }

@@ -31,10 +31,14 @@ export function useProdutos() {
   const createProduto = useMutation({
     mutationFn: async (produto: Omit<Produto, 'id'>) => {
       console.log('Criando produto:', produto);
+      // Garantir que unidade seja do tipo correto
+      const unidadeValida = produto.unidade as 'un' | 'm²' | 'kg' | 'l' | 'caixa';
+      
       const { data, error } = await supabase
         .from('produtos')
         .insert({
           ...produto,
+          unidade: unidadeValida,
           empresa_id: null // Set to null instead of a placeholder UUID
         })
         .select()
@@ -63,9 +67,15 @@ export function useProdutos() {
   const updateProduto = useMutation({
     mutationFn: async (produto: Produto) => {
       console.log('Atualizando produto:', produto);
+      // Garantir que unidade seja do tipo correto
+      const unidadeValida = produto.unidade as 'un' | 'm²' | 'kg' | 'l' | 'caixa';
+      
       const { data, error } = await supabase
         .from('produtos')
-        .update(produto)
+        .update({
+          ...produto,
+          unidade: unidadeValida
+        })
         .eq('id', produto.id)
         .select()
         .single();
