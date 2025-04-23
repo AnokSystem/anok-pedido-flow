@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -6,8 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Produto } from "@/types";
 import { Loader2 } from "lucide-react";
@@ -29,14 +29,15 @@ const produtoFormSchema = z.object({
 
 type ProdutoFormData = z.infer<typeof produtoFormSchema>;
 
-interface ProdutoFormProps {
+export interface ProdutoFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  produto: Produto | null;
-  onSuccess: (produto: Produto, isNew: boolean) => void;
+  produto: Produto | undefined;
+  isLoading: boolean;
+  onSuccess: () => void;
 }
 
-export function ProdutoForm({ open, onOpenChange, produto, onSuccess }: ProdutoFormProps) {
+export function ProdutoForm({ open, onOpenChange, produto, isLoading, onSuccess }: ProdutoFormProps) {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const isEditing = !!produto;
@@ -52,7 +53,7 @@ export function ProdutoForm({ open, onOpenChange, produto, onSuccess }: ProdutoF
   });
 
   // Atualiza o formulário quando o produto muda
-  React.useEffect(() => {
+  useEffect(() => {
     if (produto) {
       form.reset({
         nome: produto.nome,
@@ -93,8 +94,6 @@ export function ProdutoForm({ open, onOpenChange, produto, onSuccess }: ProdutoF
           title: "Produto atualizado",
           description: "As informações do produto foram atualizadas com sucesso.",
         });
-
-        onSuccess(updatedData as Produto, false);
       } else {
         // Criar novo produto
         const { data: newData, error } = await supabase
@@ -115,9 +114,10 @@ export function ProdutoForm({ open, onOpenChange, produto, onSuccess }: ProdutoF
           title: "Produto criado",
           description: "O novo produto foi criado com sucesso.",
         });
-
-        onSuccess(newData as Produto, true);
       }
+      
+      // Call the onSuccess callback
+      onSuccess();
     } catch (error: any) {
       console.error('Erro ao salvar produto:', error);
       toast({

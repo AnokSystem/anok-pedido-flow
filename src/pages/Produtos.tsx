@@ -173,7 +173,6 @@ export default function Produtos() {
       <ProdutoForm
         open={formOpen}
         onOpenChange={setFormOpen}
-        onSubmit={handleSubmit}
         produto={selectedProduto}
         isLoading={isSubmitting}
         onSuccess={handleSuccess}
