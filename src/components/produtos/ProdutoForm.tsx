@@ -8,10 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { Produto } from "@/types";
 import { Loader2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useProdutos } from "@/hooks/useProdutos";
 
 const produtoFormSchema = z.object({
   nome: z.string().min(1, "O nome é obrigatório"),
@@ -41,6 +42,7 @@ export function ProdutoForm({ open, onOpenChange, produto, isLoading, onSuccess 
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const isEditing = !!produto;
+  const { createProduto, updateProduto } = useProdutos();
 
   const form = useForm<ProdutoFormData>({
     resolver: zodResolver(produtoFormSchema),
@@ -76,43 +78,20 @@ export function ProdutoForm({ open, onOpenChange, produto, isLoading, onSuccess 
     try {
       if (isEditing) {
         // Atualizar produto existente
-        const { data: updatedData, error } = await supabase
-          .from('produtos')
-          .update({
-            nome: data.nome,
-            descricao: data.descricao,
-            unidade: data.unidade,
-            preco_unitario: Number(data.preco_unitario),
-          })
-          .eq('id', produto.id)
-          .select()
-          .single();
-
-        if (error) throw error;
-
-        toast({
-          title: "Produto atualizado",
-          description: "As informações do produto foram atualizadas com sucesso.",
+        await updateProduto.mutateAsync({
+          ...produto,
+          nome: data.nome,
+          descricao: data.descricao,
+          unidade: data.unidade,
+          preco_unitario: Number(data.preco_unitario),
         });
       } else {
         // Criar novo produto
-        const { data: newData, error } = await supabase
-          .from('produtos')
-          .insert({
-            nome: data.nome,
-            descricao: data.descricao,
-            unidade: data.unidade,
-            preco_unitario: Number(data.preco_unitario), // Garantir que é um number
-            empresa_id: "00000000-0000-0000-0000-000000000000" // Placeholder, deve ser substituído pelo ID real
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
-
-        toast({
-          title: "Produto criado",
-          description: "O novo produto foi criado com sucesso.",
+        await createProduto.mutateAsync({
+          nome: data.nome,
+          descricao: data.descricao,
+          unidade: data.unidade,
+          preco_unitario: Number(data.preco_unitario)
         });
       }
       
@@ -173,9 +152,24 @@ export function ProdutoForm({ open, onOpenChange, produto, isLoading, onSuccess 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Unidade</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ex: Kg, Unidade, Metro" {...field} />
-                  </FormControl>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    value={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione uma unidade" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="un">Unidade (un)</SelectItem>
+                      <SelectItem value="m²">Metro Quadrado (m²)</SelectItem>
+                      <SelectItem value="kg">Quilograma (kg)</SelectItem>
+                      <SelectItem value="l">Litro (l)</SelectItem>
+                      <SelectItem value="caixa">Caixa</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

@@ -33,7 +33,10 @@ export function useProdutos() {
       console.log('Criando produto:', produto);
       const { data, error } = await supabase
         .from('produtos')
-        .insert(produto)
+        .insert({
+          ...produto,
+          empresa_id: null // Set to null instead of a placeholder UUID
+        })
         .select()
         .single();
 

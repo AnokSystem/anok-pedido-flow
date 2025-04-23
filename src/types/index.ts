@@ -38,9 +38,9 @@ export type Cliente = {
 
 export type Produto = {
   id: string;
-  empresa_id: string;
+  empresa_id: string | null;
   nome: string;
-  unidade: 'un' | 'm²' | 'kg' | 'l';
+  unidade: 'un' | 'm²' | 'kg' | 'l' | 'caixa';
   preco_unitario: number;
   descricao?: string;
 };
@@ -69,7 +69,7 @@ export type ItemPedido = {
   quantidade: number;
   largura?: number;
   altura?: number;
-  unidade: 'un' | 'm²' | 'kg' | 'l';
+  unidade: 'un' | 'm²' | 'kg' | 'l' | 'caixa';
   valor_unit: number;
   valor_total: number;
   produto?: Produto;
