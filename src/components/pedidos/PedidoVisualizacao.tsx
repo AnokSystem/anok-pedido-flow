@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -266,7 +265,7 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
       doc.line(14, startY, 196, startY);
       startY += 8;
       
-      // Add items table - MODIFICADO para mostrar descrições corretamente
+      // Add items table - MODIFICADO para mostrar descrições e valor unitário corretos
       const tableColumn = ["Item", "Qtd", "Un", "Dimensões", "Valor Unit.", "Total"];
       const tableRows = pedido.itens.map(item => {
         // Usar a descrição do item como informação principal
@@ -277,12 +276,18 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
           ? `${item.largura}m × ${item.altura}m` 
           : '-';
         
+        // Para itens m², o valor unitário exibido deve ser o preço por m² multiplicado pela área
+        let valorUnitarioExibido = item.valor_unit;
+        if (item.unidade === 'm²' && item.largura && item.altura) {
+          valorUnitarioExibido = item.valor_unit * item.largura * item.altura;
+        }
+        
         return [
           descricao,
           item.quantidade.toString(),
           item.unidade,
           dimensoes,
-          formatarCurrency(item.valor_unit),
+          formatarCurrency(valorUnitarioExibido),
           formatarCurrency(item.valor_total)
         ];
       });
@@ -444,7 +449,7 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
             </>
           )}
 
-          {/* Tabela de itens do pedido - MODIFICADA para mostrar descrições e dimensões corretamente */}
+          {/* Tabela de itens do pedido - MODIFICADA para mostrar descrições, dimensões e valores unitários corretamente */}
           <Card className="print-full-width mb-4">
             <CardHeader>
               <CardTitle>Itens do Pedido</CardTitle>
@@ -472,22 +477,30 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
                         </td>
                       </tr>
                     ) : (
-                      pedido.itens.map((item, index) => (
-                        <tr key={item.id || index} className="border-b">
-                          <td className="p-2 max-w-[250px] break-words">{item.descricao || item.produto?.nome || '-'}</td>
-                          <td className="p-2 text-right">{item.quantidade}</td>
-                          <td className="p-2">{item.unidade.toUpperCase()}</td>
-                          {(pedido.itens.some(item => item.largura) || pedido.itens.some(item => item.altura)) && (
-                            <td className="p-2 text-right">
-                              {item.largura && item.altura
-                                ? `${item.largura}m × ${item.altura}m`
-                                : '-'}
-                            </td>
-                          )}
-                          <td className="p-2 text-right">{formatarCurrency(item.valor_unit)}</td>
-                          <td className="p-2 text-right">{formatarCurrency(item.valor_total)}</td>
-                        </tr>
-                      ))
+                      pedido.itens.map((item, index) => {
+                        // Para itens m², o valor unitário exibido deve ser o preço por m² multiplicado pela área
+                        let valorUnitarioExibido = item.valor_unit;
+                        if (item.unidade === 'm²' && item.largura && item.altura) {
+                          valorUnitarioExibido = item.valor_unit * item.largura * item.altura;
+                        }
+                        
+                        return (
+                          <tr key={item.id || index} className="border-b">
+                            <td className="p-2 max-w-[250px] break-words">{item.descricao || item.produto?.nome || '-'}</td>
+                            <td className="p-2 text-right">{item.quantidade}</td>
+                            <td className="p-2">{item.unidade.toUpperCase()}</td>
+                            {(pedido.itens.some(item => item.largura) || pedido.itens.some(item => item.altura)) && (
+                              <td className="p-2 text-right">
+                                {item.largura && item.altura
+                                  ? `${item.largura}m × ${item.altura}m`
+                                  : '-'}
+                              </td>
+                            )}
+                            <td className="p-2 text-right">{formatarCurrency(valorUnitarioExibido)}</td>
+                            <td className="p-2 text-right">{formatarCurrency(item.valor_total)}</td>
+                          </tr>
+                        )
+                      })
                     )}
                   </tbody>
                   <tfoot>

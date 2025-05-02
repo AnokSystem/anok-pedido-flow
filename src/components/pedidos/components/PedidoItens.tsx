@@ -46,10 +46,13 @@ export function PedidoItens({
               </TableRow>
             ) : (
               itensPedido.map((item, index) => {
-                // Calculate the real unit price for m² items (price per measurement)
-                const realUnitPrice = item.unidade === 'm²' && item.largura && item.altura 
-                  ? item.valor_total / (item.quantidade * item.largura * item.altura)
-                  : item.valor_unit;
+                // Para itens m², o valor unitário exibido deve ser o preço por m² multiplicado pela área
+                let valorUnitarioExibido = item.valor_unit;
+                
+                // Se for m² e tiver dimensões, calcular o valor real por unidade (considerando a área)
+                if (item.unidade === 'm²' && item.largura && item.altura) {
+                  valorUnitarioExibido = item.valor_unit * item.largura * item.altura;
+                }
                 
                 return (
                   <TableRow key={item.id || index}>
@@ -62,7 +65,7 @@ export function PedidoItens({
                         ? `${item.largura}m × ${item.altura}m` 
                         : "-"}
                     </TableCell>
-                    <TableCell className="text-right">{formatarCurrency(realUnitPrice)}</TableCell>
+                    <TableCell className="text-right">{formatarCurrency(valorUnitarioExibido)}</TableCell>
                     <TableCell className="text-right">{formatarCurrency(item.valor_total)}</TableCell>
                     <TableCell>
                       <Button
