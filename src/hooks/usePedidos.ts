@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Pedido, Cliente, ItemPedido } from '@/types';
@@ -26,8 +25,12 @@ export function usePedidos() {
         });
         throw error;
       }
-
-      return data as Pedido[];
+      
+      // Adicionar propriedade itens vazia para cada pedido para corresponder ao tipo Pedido
+      return (data || []).map(pedido => ({
+        ...pedido,
+        itens: [] as ItemPedido[]
+      })) as Pedido[];
     },
   });
 

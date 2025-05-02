@@ -100,10 +100,40 @@ export function useProdutos() {
     },
   });
 
+  const deleteProduto = useMutation({
+    mutationFn: async (id: string) => {
+      console.log('Excluindo produto:', id);
+      
+      const { error } = await supabase
+        .from('produtos')
+        .delete()
+        .eq('id', id);
+        
+      if (error) throw error;
+      return id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['produtos'] });
+      toast({
+        title: 'Produto excluído',
+        description: 'O produto foi excluído com sucesso.',
+      });
+    },
+    onError: (error) => {
+      console.error('Erro ao excluir produto:', error);
+      toast({
+        title: 'Erro ao excluir produto',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   return {
     produtos,
     isLoading,
     createProduto,
     updateProduto,
+    deleteProduto
   };
 }

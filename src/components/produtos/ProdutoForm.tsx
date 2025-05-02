@@ -17,7 +17,7 @@ import { useProdutos } from "@/hooks/useProdutos";
 const produtoFormSchema = z.object({
   nome: z.string().min(1, "O nome é obrigatório"),
   descricao: z.string().optional(),
-  unidade: z.string().min(1, "A unidade é obrigatória"),
+  unidade: z.enum(["un", "m²", "kg", "l", "caixa"]),
   preco_unitario: z.string().refine((value) => {
     try {
       const num = parseFloat(value);
@@ -49,7 +49,7 @@ export function ProdutoForm({ open, onOpenChange, produto, isLoading, onSuccess 
     defaultValues: {
       nome: produto?.nome || "",
       descricao: produto?.descricao || "",
-      unidade: produto?.unidade || "",
+      unidade: (produto?.unidade as "un" | "m²" | "kg" | "l" | "caixa") || "un",
       preco_unitario: produto?.preco_unitario?.toString() || "0",
     },
   });
@@ -67,7 +67,7 @@ export function ProdutoForm({ open, onOpenChange, produto, isLoading, onSuccess 
       form.reset({
         nome: "",
         descricao: "",
-        unidade: "",
+        unidade: "un",
         preco_unitario: "0",
       });
     }

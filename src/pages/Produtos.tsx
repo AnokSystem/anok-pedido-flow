@@ -29,12 +29,13 @@ import {
 import { toast } from "@/hooks/use-toast";
 
 export default function Produtos() {
-  const { produtos, isLoading, createProduto, updateProduto } = useProdutos();
+  const { produtos, isLoading, createProduto, updateProduto, deleteProduto } = useProdutos();
   
   const [formOpen, setFormOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [selectedProduto, setSelectedProduto] = useState<Produto | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleOpenNewForm = () => {
     setSelectedProduto(undefined);
@@ -87,13 +88,22 @@ export default function Produtos() {
   };
 
   const handleDelete = async () => {
-    // A funcionalidade de exclusão será implementada em uma etapa futura
-    setConfirmDeleteOpen(false);
-    toast({
-      title: "Exclusão não implementada",
-      description: "A exclusão de produtos será implementada em uma atualização futura",
-      variant: "destructive",
-    });
+    if (!selectedProduto) return;
+    
+    setIsDeleting(true);
+    try {
+      await deleteProduto.mutateAsync(selectedProduto.id);
+      setConfirmDeleteOpen(false);
+    } catch (error) {
+      console.error("Erro ao excluir produto:", error);
+      toast({
+        title: "Erro ao excluir",
+        description: "Ocorreu um erro ao excluir o produto: " + (error instanceof Error ? error.message : String(error)),
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -189,8 +199,14 @@ export default function Produtos() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>Excluir</AlertDialogAction>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {isDeleting ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
