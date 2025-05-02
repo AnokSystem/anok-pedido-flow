@@ -78,11 +78,13 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
       altura
     );
 
+    const descricaoFinal = descricao || produtoEncontrado.nome;
+
     const novoItem = {
       id: `temp-${Date.now()}`,
       pedido_id: pedido?.id || "",
       produto_id: produtoEncontrado.id,
-      descricao: descricao || produtoEncontrado.nome,
+      descricao: descricaoFinal,
       quantidade: quantidade,
       unidade: produtoEncontrado.unidade,
       valor_unit: valorUnitario,
