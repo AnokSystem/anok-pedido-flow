@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -28,7 +29,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function Clientes() {
-  const { clientes, isLoading, createCliente, updateCliente } = useClientes();
+  const { clientes, isLoading, createCliente, updateCliente, deleteCliente } = useClientes();
   
   const [formOpen, setFormOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -82,13 +83,19 @@ export default function Clientes() {
   };
 
   const handleDelete = async () => {
-    // A funcionalidade de exclusão será implementada em uma etapa futura
-    setConfirmDeleteOpen(false);
-    toast({
-      title: "Exclusão não implementada",
-      description: "A exclusão de clientes será implementada em uma atualização futura",
-      variant: "destructive",
-    });
+    if (!selectedCliente) return;
+
+    try {
+      await deleteCliente.mutateAsync(selectedCliente.id);
+      setConfirmDeleteOpen(false);
+    } catch (error) {
+      console.error("Erro ao excluir cliente:", error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao excluir o cliente: " + (error instanceof Error ? error.message : String(error)),
+        variant: "destructive",
+      });
+    }
   };
 
   return (

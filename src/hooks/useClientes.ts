@@ -83,10 +83,37 @@ export function useClientes() {
     },
   });
 
+  const deleteCliente = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('clientes')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clientes'] });
+      toast({
+        title: 'Cliente excluído',
+        description: 'O cliente foi excluído com sucesso.',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Erro ao excluir cliente',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   return {
     clientes,
     isLoading,
     createCliente,
     updateCliente,
+    deleteCliente,
   };
 }
