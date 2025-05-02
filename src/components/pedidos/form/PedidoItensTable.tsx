@@ -45,8 +45,10 @@ export function PedidoItensTable({
               </TableRow>
             ) : (
               itensPedido.map((item, index) => {
-                // Calculate the real unit price for m² items (price per m²)
-                const realUnitPrice = item.unidade === 'm²' ? item.valor_unit : item.valor_unit;
+                // Calculate the real unit price for m² items (price per measurement)
+                const realUnitPrice = item.unidade === 'm²' && item.largura && item.altura 
+                  ? item.valor_total / (item.quantidade * item.largura * item.altura)
+                  : item.valor_unit;
                 
                 return (
                   <TableRow key={item.id || index}>
