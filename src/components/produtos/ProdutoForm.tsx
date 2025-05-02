@@ -86,12 +86,13 @@ export function ProdutoForm({ open, onOpenChange, produto, isLoading, onSuccess 
           preco_unitario: Number(data.preco_unitario),
         });
       } else {
-        // Criar novo produto
+        // Criar novo produto - adicionando empresa_id como null para corresponder ao tipo Produto
         await createProduto.mutateAsync({
           nome: data.nome,
           descricao: data.descricao,
           unidade: data.unidade,
-          preco_unitario: Number(data.preco_unitario)
+          preco_unitario: Number(data.preco_unitario),
+          empresa_id: null // Adicionando o campo empresa_id como null
         });
       }
       
