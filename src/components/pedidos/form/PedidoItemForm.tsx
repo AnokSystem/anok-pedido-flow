@@ -47,6 +47,16 @@ export function PedidoItemForm({
   
   return (
     <div className="grid grid-cols-1 gap-3">
+      <div className="col-span-full">
+        <label className="block text-sm font-medium mb-1">Descrição do Item</label>
+        <Textarea 
+          placeholder="Descreva informações sobre o item ou material utilizado..."
+          value={descricao}
+          onChange={(e) => setDescricao(e.target.value)}
+          className="min-h-[60px]"
+        />
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
         <div className="md:col-span-2">
           <label className="block text-sm font-medium mb-1">Produto</label>
@@ -103,19 +113,6 @@ export function PedidoItemForm({
           </>
         )}
       </div>
-
-      {/* Show description field only for m² products */}
-      {unidade === 'm²' && (
-        <div className="col-span-full">
-          <label className="block text-sm font-medium mb-1">Descrição do Item</label>
-          <Textarea 
-            placeholder="Descreva informações sobre o item ou material utilizado..."
-            value={descricao}
-            onChange={(e) => setDescricao(e.target.value)}
-            className="min-h-[60px]"
-          />
-        </div>
-      )}
 
       <div className="flex justify-end">
         <Button 

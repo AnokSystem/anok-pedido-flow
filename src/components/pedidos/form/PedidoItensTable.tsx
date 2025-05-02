@@ -26,8 +26,8 @@ export function PedidoItensTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Produto</TableHead>
               <TableHead>Descrição</TableHead>
+              <TableHead>Produto</TableHead>
               <TableHead className="text-right">Qtd</TableHead>
               <TableHead>Unidade</TableHead>
               <TableHead className="text-right">Dimensões</TableHead>
@@ -44,31 +44,36 @@ export function PedidoItensTable({
                 </TableCell>
               </TableRow>
             ) : (
-              itensPedido.map((item, index) => (
-                <TableRow key={item.id || index}>
-                  <TableCell>{item.produto?.nome || "Produto"}</TableCell>
-                  <TableCell className="max-w-[200px] break-words">{item.descricao}</TableCell>
-                  <TableCell className="text-right">{item.quantidade}</TableCell>
-                  <TableCell>{item.unidade}</TableCell>
-                  <TableCell className="text-right">
-                    {item.unidade === 'm²' && item.largura && item.altura 
-                      ? `${item.largura}m × ${item.altura}m` 
-                      : "-"}
-                  </TableCell>
-                  <TableCell className="text-right">{formatarCurrency(item.valor_unit)}</TableCell>
-                  <TableCell className="text-right">{formatarCurrency(item.valor_total)}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removerItem(index)}
-                      title="Remover item"
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
+              itensPedido.map((item, index) => {
+                // Calculate the real unit price for m² items (price per m²)
+                const realUnitPrice = item.unidade === 'm²' ? item.valor_unit : item.valor_unit;
+                
+                return (
+                  <TableRow key={item.id || index}>
+                    <TableCell className="max-w-[200px] break-words">{item.descricao}</TableCell>
+                    <TableCell>{item.produto?.nome || "Produto"}</TableCell>
+                    <TableCell className="text-right">{item.quantidade}</TableCell>
+                    <TableCell>{item.unidade}</TableCell>
+                    <TableCell className="text-right">
+                      {item.unidade === 'm²' && item.largura && item.altura 
+                        ? `${item.largura}m × ${item.altura}m` 
+                        : "-"}
+                    </TableCell>
+                    <TableCell className="text-right">{formatarCurrency(realUnitPrice)}</TableCell>
+                    <TableCell className="text-right">{formatarCurrency(item.valor_total)}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removerItem(index)}
+                        title="Remover item"
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                )
+              })
             )}
           </TableBody>
         </Table>
