@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -266,16 +265,22 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
       doc.line(14, startY, 196, startY);
       startY += 8;
       
-      // Add items table
+      // Add items table - updated to show item descriptions properly
       const tableColumn = ["Item", "Qtd", "Un", "Dimensões", "Valor Unit.", "Total"];
       const tableRows = pedido.itens.map(item => {
-        const itemDesc = item.produto?.nome || item.descricao || 'N/A';
+        // Use item description as primary, fallback to product name if description is empty
+        const itemDesc = item.descricao || item.produto?.nome || 'N/A';
+        
+        // Format dimensions if they exist
+        const dimensoes = item.largura && item.altura 
+          ? `${item.largura}m × ${item.altura}m` 
+          : '-';
         
         return [
           itemDesc,
           item.quantidade.toString(),
           item.unidade,
-          item.largura && item.altura ? `${item.largura}x${item.altura}` : '-',
+          dimensoes,
           formatarCurrency(item.valor_unit),
           formatarCurrency(item.valor_total)
         ];
@@ -464,7 +469,7 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
                     ) : (
                       pedido.itens.map((item, index) => (
                         <tr key={item.id || index} className="border-b">
-                          <td className="p-2">{item.produto?.nome || item.descricao || '-'}</td>
+                          <td className="p-2">{item.descricao || item.produto?.nome || '-'}</td>
                           <td className="p-2 text-right">{item.quantidade}</td>
                           <td className="p-2">{item.unidade.toUpperCase()}</td>
                           {(pedido.itens.some(item => item.largura) || pedido.itens.some(item => item.altura)) && (

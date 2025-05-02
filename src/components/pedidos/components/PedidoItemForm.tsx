@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -21,6 +21,7 @@ interface PedidoItemFormProps {
   setQuantidade: (quantidade: number) => void;
   setLargura: (largura: number | undefined) => void;
   setAltura: (altura: number | undefined) => void;
+  setUnidade: (unidade: string) => void;
   setDescricao: (descricao: string) => void;
   adicionarItem: () => void;
 }
@@ -38,9 +39,21 @@ export function PedidoItemForm({
   setQuantidade,
   setLargura,
   setAltura,
+  setUnidade,
   setDescricao,
   adicionarItem,
 }: PedidoItemFormProps) {
+  // Find the selected product to determine if it's m²
+  const produtoSelecionadoObj = produtos?.find(p => p.id === produtoSelecionado);
+  const isProdutoM2 = produtoSelecionadoObj?.unidade === 'm²';
+  
+  // Update unidade whenever product changes
+  useEffect(() => {
+    if (produtoSelecionadoObj) {
+      setUnidade(produtoSelecionadoObj.unidade);
+    }
+  }, [produtoSelecionadoObj, setUnidade]);
+  
   return (
     <div className="grid grid-cols-1 gap-3">
       <div className="col-span-full">
@@ -86,13 +99,13 @@ export function PedidoItemForm({
           />
         </div>
 
-        {unidade === 'm²' && (
+        {isProdutoM2 && (
           <>
             <div>
               <label className="block text-sm font-medium mb-1">Largura (m)</label>
               <Input 
                 type="number" 
-                value={largura || ''} 
+                value={largura || 0.5} 
                 onChange={(e) => setLargura(Number(e.target.value))} 
                 step="0.01"
               />
@@ -101,7 +114,7 @@ export function PedidoItemForm({
               <label className="block text-sm font-medium mb-1">Altura (m)</label>
               <Input 
                 type="number" 
-                value={altura || ''} 
+                value={altura || 0.5} 
                 onChange={(e) => setAltura(Number(e.target.value))} 
                 step="0.01"
               />
