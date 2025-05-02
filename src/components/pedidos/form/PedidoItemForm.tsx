@@ -41,6 +41,10 @@ export function PedidoItemForm({
   setDescricao,
   adicionarItem,
 }: PedidoItemFormProps) {
+  // Find the selected product to determine if it's m²
+  const produtoSelecionadoObj = produtos?.find(p => p.id === produtoSelecionado);
+  const isProdutoM2 = produtoSelecionadoObj?.unidade === 'm²';
+  
   return (
     <div className="grid grid-cols-1 gap-3">
       <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
@@ -100,16 +104,18 @@ export function PedidoItemForm({
         )}
       </div>
 
-      {/* Description field - shown for all products but especially important for m² */}
-      <div className="col-span-full">
-        <label className="block text-sm font-medium mb-1">Descrição do Item</label>
-        <Textarea 
-          placeholder="Descreva informações sobre o item ou material utilizado..."
-          value={descricao}
-          onChange={(e) => setDescricao(e.target.value)}
-          className="min-h-[60px]"
-        />
-      </div>
+      {/* Show description field only for m² products */}
+      {unidade === 'm²' && (
+        <div className="col-span-full">
+          <label className="block text-sm font-medium mb-1">Descrição do Item</label>
+          <Textarea 
+            placeholder="Descreva informações sobre o item ou material utilizado..."
+            value={descricao}
+            onChange={(e) => setDescricao(e.target.value)}
+            className="min-h-[60px]"
+          />
+        </div>
+      )}
 
       <div className="flex justify-end">
         <Button 
