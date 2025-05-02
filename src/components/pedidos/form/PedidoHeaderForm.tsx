@@ -9,16 +9,14 @@ import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { Cliente } from "@/types";
 import { Textarea } from "@/components/ui/textarea";
+import { useClientes } from "@/hooks/useClientes";
 
 const statusOptions = ["Criado", "Em Produção", "Pronto", "Entregue"];
 
 interface PedidoHeaderFormProps {
   form: any;
   editMode: boolean;
-  clientesLoading: boolean;
-  clientes: Cliente[] | undefined;
   handleClienteChange: (clienteId: string) => void;
   descontoCliente: number;
 }
@@ -26,11 +24,11 @@ interface PedidoHeaderFormProps {
 export function PedidoHeaderForm({
   form,
   editMode,
-  clientesLoading,
-  clientes,
   handleClienteChange,
   descontoCliente
 }: PedidoHeaderFormProps) {
+  const { clientes, isLoading: clientesLoading } = useClientes();
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
