@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -265,19 +266,19 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
       doc.line(14, startY, 196, startY);
       startY += 8;
       
-      // Add items table - updated to show item descriptions properly
+      // Add items table - MODIFICADO para mostrar descrições corretamente
       const tableColumn = ["Item", "Qtd", "Un", "Dimensões", "Valor Unit.", "Total"];
       const tableRows = pedido.itens.map(item => {
-        // Use item description as primary, fallback to product name if description is empty
-        const itemDesc = item.descricao || item.produto?.nome || 'N/A';
+        // Usar a descrição do item como informação principal
+        const descricao = item.descricao || (item.produto?.nome || 'N/A');
         
-        // Format dimensions if they exist
+        // Formatar dimensões se existirem
         const dimensoes = item.largura && item.altura 
           ? `${item.largura}m × ${item.altura}m` 
           : '-';
         
         return [
-          itemDesc,
+          descricao,
           item.quantidade.toString(),
           item.unidade,
           dimensoes,
@@ -292,7 +293,11 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
         body: tableRows,
         startY: startY,
         theme: 'grid',
-        styles: { fontSize: 10 }
+        styles: { fontSize: 10 },
+        columnStyles: {
+          0: { cellWidth: 60 }, // Coluna de descrição mais larga
+          3: { cellWidth: 30 } // Coluna de dimensões com largura adequada
+        },
       });
       
       // Add total
@@ -439,7 +444,7 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
             </>
           )}
 
-          {/* Tabela de itens do pedido */}
+          {/* Tabela de itens do pedido - MODIFICADA para mostrar descrições e dimensões corretamente */}
           <Card className="print-full-width mb-4">
             <CardHeader>
               <CardTitle>Itens do Pedido</CardTitle>
@@ -469,13 +474,13 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
                     ) : (
                       pedido.itens.map((item, index) => (
                         <tr key={item.id || index} className="border-b">
-                          <td className="p-2">{item.descricao || item.produto?.nome || '-'}</td>
+                          <td className="p-2 max-w-[250px] break-words">{item.descricao || item.produto?.nome || '-'}</td>
                           <td className="p-2 text-right">{item.quantidade}</td>
                           <td className="p-2">{item.unidade.toUpperCase()}</td>
                           {(pedido.itens.some(item => item.largura) || pedido.itens.some(item => item.altura)) && (
                             <td className="p-2 text-right">
                               {item.largura && item.altura
-                                ? `${item.largura} x ${item.altura}`
+                                ? `${item.largura}m × ${item.altura}m`
                                 : '-'}
                             </td>
                           )}

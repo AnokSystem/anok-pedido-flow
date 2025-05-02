@@ -3,7 +3,7 @@ import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Pedido } from "@/types";
+import { Pedido, ItemPedido } from "@/types";
 import { useProdutos } from "@/hooks/useProdutos";
 import { toast } from "@/hooks/use-toast";
 import { calcularValorItem } from "@/lib/utils";
@@ -82,7 +82,7 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
 
     const descricaoFinal = descricao || produtoEncontrado.nome;
 
-    const novoItem = {
+    const novoItem: ItemPedido = {
       id: `temp-${Date.now()}`,
       pedido_id: pedido?.id || "",
       produto_id: produtoEncontrado.id,
@@ -97,8 +97,8 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
     };
 
     const novosItens = [...itensPedido, novoItem];
-    setItensPedido(novosItens as any);
-    calcularTotal(novosItens as any, descontoCliente);
+    setItensPedido(novosItens);
+    calcularTotal(novosItens, descontoCliente);
     
     // Reset fields after adding an item
     setProdutoSelecionado("");
