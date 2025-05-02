@@ -15,13 +15,13 @@ interface PedidoItemFormProps {
   quantidade: number;
   largura: number | undefined;
   altura: number | undefined;
-  unidade: string;
+  unidade: "un" | "m²" | "kg" | "l" | "caixa";
   descricao: string;
   handleProdutoChange: (produtoId: string) => void;
   setQuantidade: (quantidade: number) => void;
   setLargura: (largura: number | undefined) => void;
   setAltura: (altura: number | undefined) => void;
-  setUnidade: (unidade: string) => void;
+  setUnidade: (unidade: "un" | "m²" | "kg" | "l" | "caixa") => void;
   setDescricao: (descricao: string) => void;
   adicionarItem: () => void;
 }
@@ -50,7 +50,7 @@ export function PedidoItemForm({
   // Update unidade whenever product changes
   useEffect(() => {
     if (produtoSelecionadoObj) {
-      setUnidade(produtoSelecionadoObj.unidade);
+      setUnidade(produtoSelecionadoObj.unidade as "un" | "m²" | "kg" | "l" | "caixa");
     }
   }, [produtoSelecionadoObj, setUnidade]);
   
@@ -99,7 +99,7 @@ export function PedidoItemForm({
           />
         </div>
 
-        {isProdutoM2 && (
+        {unidade === 'm²' && (
           <>
             <div>
               <label className="block text-sm font-medium mb-1">Largura (m)</label>

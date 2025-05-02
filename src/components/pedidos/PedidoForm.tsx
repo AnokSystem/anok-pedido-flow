@@ -97,8 +97,8 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
     };
 
     const novosItens = [...itensPedido, novoItem];
-    setItensPedido(novosItens);
-    calcularTotal(novosItens, descontoCliente);
+    setItensPedido(novosItens as any);
+    calcularTotal(novosItens as any, descontoCliente);
     
     // Reset fields after adding an item
     setProdutoSelecionado("");
