@@ -19,7 +19,8 @@ const pedidoSchema = z.object({
 
 type PedidoFormData = z.infer<typeof pedidoSchema>;
 
-export function usePedidoFormState(pedido?: Pedido, open: boolean, onOpenChange: (open: boolean) => void) {
+// Fixed the function signature by rearranging parameters so required parameters come before optional ones
+export function usePedidoFormState(open: boolean, onOpenChange: (open: boolean) => void, pedido?: Pedido) {
   const { pedidos } = usePedidos();
   const [numeroPedidoGerado, setNumeroPedidoGerado] = useState("");
   const [itensPedido, setItensPedido] = useState<ItemPedido[]>([]);

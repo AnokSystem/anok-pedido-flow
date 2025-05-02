@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
@@ -48,7 +47,7 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
     handleProdutoChange, 
     calcularTotal, 
     validateSubmit 
-  } = usePedidoFormState(pedido, open, onOpenChange);
+  } = usePedidoFormState(open, onOpenChange, pedido);
 
   const adicionarItem = () => {
     if (!produtoSelecionado || quantidade <= 0) {
