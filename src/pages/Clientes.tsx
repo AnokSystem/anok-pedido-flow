@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -19,13 +18,12 @@ import { Cliente } from "@/types";
 import { toast } from "@/hooks/use-toast";
 import { 
   AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle
+  AlertDialogTitle,
+  AlertDialogCancel
 } from "@/components/ui/alert-dialog";
 
 export default function Clientes() {
@@ -35,6 +33,7 @@ export default function Clientes() {
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [selectedCliente, setSelectedCliente] = useState<Cliente | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleOpenNewForm = () => {
     setSelectedCliente(undefined);
@@ -86,7 +85,12 @@ export default function Clientes() {
     if (!selectedCliente) return;
 
     try {
+      setIsDeleting(true);
       await deleteCliente.mutateAsync(selectedCliente.id);
+      toast({
+        title: "Cliente excluído",
+        description: "O cliente foi excluído com sucesso.",
+      });
       setConfirmDeleteOpen(false);
     } catch (error) {
       console.error("Erro ao excluir cliente:", error);
@@ -95,6 +99,8 @@ export default function Clientes() {
         description: "Ocorreu um erro ao excluir o cliente: " + (error instanceof Error ? error.message : String(error)),
         variant: "destructive",
       });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -194,7 +200,13 @@ export default function Clientes() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>Excluir</AlertDialogAction>
+            <Button 
+              variant="destructive" 
+              onClick={handleDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Excluindo..." : "Excluir"}
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

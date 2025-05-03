@@ -10,6 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { Pedido } from "@/types";
 
 interface DeletePedidoDialogProps {
@@ -39,9 +40,13 @@ export function DeletePedidoDialog({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <AlertDialogAction onClick={onDelete} disabled={isLoading}>
+          <Button 
+            variant="destructive"
+            onClick={onDelete}
+            disabled={isLoading}
+          >
             {isLoading ? "Excluindo..." : "Excluir"}
-          </AlertDialogAction>
+          </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

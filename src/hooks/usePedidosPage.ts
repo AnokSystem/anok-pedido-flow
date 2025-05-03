@@ -192,6 +192,10 @@ export function usePedidosPage() {
       try {
         setIsActionLoading(true);
         await deletePedido.mutateAsync(selectedPedido.id);
+        toast({
+          title: "Pedido excluído",
+          description: "O pedido foi excluído com sucesso.",
+        });
         setConfirmDeleteOpen(false);
       } catch (error) {
         console.error("Erro ao excluir pedido:", error);
