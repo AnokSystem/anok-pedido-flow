@@ -120,16 +120,17 @@ export const generatePedidoPDF = (pedido: Pedido, empresa: Empresa | null) => {
   doc.line(14, startY, 196, startY);
   startY += 8;
   
-  // Add items table - removido valor unitário, mantendo apenas valor por unidade
-  const tableColumn = ["Item", "Qtd", "Un", "Dimensões", "Valor/Un", "Total"];
+  // Verificar se algum item tem dimensões e é m²
+  const showDimensoes = pedido.itens.some(item => item.unidade === 'm²' && item.largura && item.altura);
+  
+  // Definir colunas com base na necessidade de mostrar dimensões
+  const tableColumn = showDimensoes 
+    ? ["Item", "Qtd", "Un", "Dimensões", "Valor/Un", "Total"]
+    : ["Item", "Qtd", "Un", "Valor/Un", "Total"];
+  
   const tableRows = pedido.itens.map(item => {
     // Usar a descrição do item como informação principal
     const descricao = item.descricao || (item.produto?.nome || 'N/A');
-    
-    // Formatar dimensões se existirem
-    const dimensoes = item.largura && item.altura 
-      ? `${item.largura}m × ${item.altura}m` 
-      : '-';
     
     // Valor por unidade (considerando área para itens m²)
     let valorPorUnidade = item.valor_unit;
@@ -137,14 +138,29 @@ export const generatePedidoPDF = (pedido: Pedido, empresa: Empresa | null) => {
       valorPorUnidade = item.valor_unit * item.largura * item.altura;
     }
     
-    return [
-      descricao,
-      item.quantidade.toString(),
-      item.unidade,
-      dimensoes,
-      formatarCurrency(valorPorUnidade),
-      formatarCurrency(item.valor_total)
-    ];
+    // Criar linha com ou sem dimensões dependendo do tipo de produto
+    if (showDimensoes) {
+      const dimensoes = item.unidade === 'm²' && item.largura && item.altura
+        ? `${item.largura}m × ${item.altura}m`
+        : '-';
+      
+      return [
+        descricao,
+        item.quantidade.toString(),
+        item.unidade,
+        dimensoes,
+        formatarCurrency(valorPorUnidade),
+        formatarCurrency(item.valor_total)
+      ];
+    } else {
+      return [
+        descricao,
+        item.quantidade.toString(),
+        item.unidade,
+        formatarCurrency(valorPorUnidade),
+        formatarCurrency(item.valor_total)
+      ];
+    }
   });
   
   // Use autoTable properly
@@ -154,11 +170,16 @@ export const generatePedidoPDF = (pedido: Pedido, empresa: Empresa | null) => {
     startY: startY,
     theme: 'grid',
     styles: { fontSize: 9 },
-    columnStyles: {
-      0: { cellWidth: 50 }, // Coluna de descrição
-      3: { cellWidth: 25 }, // Coluna de dimensões
-      4: { cellWidth: 20 }, // Coluna de valor por unidade
-    },
+    columnStyles: showDimensoes
+      ? {
+          0: { cellWidth: 50 }, // Coluna de descrição
+          3: { cellWidth: 25 }, // Coluna de dimensões
+          4: { cellWidth: 20 }, // Coluna de valor por unidade
+        }
+      : {
+          0: { cellWidth: 50 }, // Coluna de descrição
+          3: { cellWidth: 20 }, // Coluna de valor por unidade
+        },
   });
   
   // Add total

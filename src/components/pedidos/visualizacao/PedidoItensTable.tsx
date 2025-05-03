@@ -10,7 +10,8 @@ interface PedidoItensTableProps {
 }
 
 export function PedidoItensTable({ itens, total }: PedidoItensTableProps) {
-  const showDimensoes = itens.some(item => item.largura) || itens.some(item => item.altura);
+  // Só mostrar a coluna de dimensões se algum item for m² e tiver dimensões preenchidas
+  const showDimensoes = itens.some(item => item.unidade === 'm²' && item.largura && item.altura);
   
   return (
     <Card className="print-full-width mb-4">
@@ -52,7 +53,7 @@ export function PedidoItensTable({ itens, total }: PedidoItensTableProps) {
                       <td className="p-2">{item.unidade.toUpperCase()}</td>
                       {showDimensoes && (
                         <td className="p-2 text-right">
-                          {item.largura && item.altura
+                          {item.unidade === 'm²' && item.largura && item.altura
                             ? `${item.largura}m × ${item.altura}m`
                             : '-'}
                         </td>
