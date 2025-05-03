@@ -96,7 +96,7 @@ export function PedidoItemForm({
               <label className="block text-sm font-medium mb-1">Largura (m)</label>
               <Input 
                 type="number" 
-                value={largura || ''} 
+                value={largura || 0} 
                 onChange={(e) => setLargura(Number(e.target.value))} 
                 step="0.01"
               />
@@ -105,7 +105,7 @@ export function PedidoItemForm({
               <label className="block text-sm font-medium mb-1">Altura (m)</label>
               <Input 
                 type="number" 
-                value={altura || ''} 
+                value={altura || 0} 
                 onChange={(e) => setAltura(Number(e.target.value))} 
                 step="0.01"
               />

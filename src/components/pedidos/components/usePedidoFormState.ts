@@ -26,8 +26,8 @@ export function usePedidoFormState(open: boolean, onOpenChange: (open: boolean) 
   const [itensPedido, setItensPedido] = useState<ItemPedido[]>([]);
   const [produtoSelecionado, setProdutoSelecionado] = useState("");
   const [quantidade, setQuantidade] = useState<number>(1);
-  const [largura, setLargura] = useState<number>(0.5);
-  const [altura, setAltura] = useState<number>(0.5);
+  const [largura, setLargura] = useState<number>(0);
+  const [altura, setAltura] = useState<number>(0);
   const [unidade, setUnidade] = useState<"un" | "m²" | "kg" | "l" | "caixa">("un");
   const [total, setTotal] = useState<number>(0);
   const [clienteSelecionado, setClienteSelecionado] = useState<string>("");
