@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -265,8 +266,8 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
       doc.line(14, startY, 196, startY);
       startY += 8;
       
-      // Add items table - MODIFICADO para mostrar descrições e valor unitário corretos
-      const tableColumn = ["Item", "Qtd", "Un", "Dimensões", "Valor Unit.", "Total"];
+      // Add items table - MODIFICADO para mostrar descrições, valor unitário e valor por unidade corretos
+      const tableColumn = ["Item", "Qtd", "Un", "Dimensões", "Valor Unit.", "Valor/Un", "Total"];
       const tableRows = pedido.itens.map(item => {
         // Usar a descrição do item como informação principal
         const descricao = item.descricao || (item.produto?.nome || 'N/A');
@@ -276,10 +277,13 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
           ? `${item.largura}m × ${item.altura}m` 
           : '-';
         
-        // Para itens m², o valor unitário exibido deve ser o preço por m² multiplicado pela área
-        let valorUnitarioExibido = item.valor_unit;
+        // Para itens m², o valor unitário exibido deve ser o preço por m²
+        const valorUnitarioExibido = item.valor_unit;
+        
+        // Valor por unidade (considerando área para itens m²)
+        let valorPorUnidade = item.valor_unit;
         if (item.unidade === 'm²' && item.largura && item.altura) {
-          valorUnitarioExibido = item.valor_unit * item.largura * item.altura;
+          valorPorUnidade = item.valor_unit * item.largura * item.altura;
         }
         
         return [
@@ -288,20 +292,23 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
           item.unidade,
           dimensoes,
           formatarCurrency(valorUnitarioExibido),
+          formatarCurrency(valorPorUnidade),
           formatarCurrency(item.valor_total)
         ];
       });
       
-      // Use autoTable properly
+      // Use autoTable properly com uma coluna adicional
       autoTable(doc, {
         head: [tableColumn],
         body: tableRows,
         startY: startY,
         theme: 'grid',
-        styles: { fontSize: 10 },
+        styles: { fontSize: 9 }, // Diminuído para caber todas as colunas
         columnStyles: {
-          0: { cellWidth: 60 }, // Coluna de descrição mais larga
-          3: { cellWidth: 30 } // Coluna de dimensões com largura adequada
+          0: { cellWidth: 50 }, // Coluna de descrição
+          3: { cellWidth: 25 }, // Coluna de dimensões
+          4: { cellWidth: 20 }, // Coluna de valor unitário
+          5: { cellWidth: 20 }, // Coluna de valor por unidade
         },
       });
       
@@ -449,7 +456,7 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
             </>
           )}
 
-          {/* Tabela de itens do pedido - MODIFICADA para mostrar descrições, dimensões e valores unitários corretamente */}
+          {/* Tabela de itens do pedido - MODIFICADA para mostrar descrições, dimensões e valores unitários e por unidade corretamente */}
           <Card className="print-full-width mb-4">
             <CardHeader>
               <CardTitle>Itens do Pedido</CardTitle>
@@ -466,22 +473,26 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
                         <th className="text-right p-2">Dimensões</th>
                       )}
                       <th className="text-right p-2">Valor Unit.</th>
+                      <th className="text-right p-2">Valor/Un</th>
                       <th className="text-right p-2">Total</th>
                     </tr>
                   </thead>
                   <tbody>
                     {pedido.itens.length === 0 ? (
                       <tr className="border-b">
-                        <td colSpan={6} className="p-4 text-center text-muted-foreground">
+                        <td colSpan={7} className="p-4 text-center text-muted-foreground">
                           Nenhum item adicionado a este pedido
                         </td>
                       </tr>
                     ) : (
                       pedido.itens.map((item, index) => {
-                        // Para itens m², o valor unitário exibido deve ser o preço por m² multiplicado pela área
-                        let valorUnitarioExibido = item.valor_unit;
+                        // Valor unitário é o preço base por m² ou unidade
+                        const valorUnitario = item.valor_unit;
+                        
+                        // Valor por unidade (considerando área para itens m²)
+                        let valorPorUnidade = item.valor_unit;
                         if (item.unidade === 'm²' && item.largura && item.altura) {
-                          valorUnitarioExibido = item.valor_unit * item.largura * item.altura;
+                          valorPorUnidade = item.valor_unit * item.largura * item.altura;
                         }
                         
                         return (
@@ -496,7 +507,8 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
                                   : '-'}
                               </td>
                             )}
-                            <td className="p-2 text-right">{formatarCurrency(valorUnitarioExibido)}</td>
+                            <td className="p-2 text-right">{formatarCurrency(valorUnitario)}</td>
+                            <td className="p-2 text-right">{formatarCurrency(valorPorUnidade)}</td>
                             <td className="p-2 text-right">{formatarCurrency(item.valor_total)}</td>
                           </tr>
                         )
@@ -505,7 +517,7 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
                   </tbody>
                   <tfoot>
                     <tr className="font-medium">
-                      <td colSpan={(pedido.itens.some(item => item.largura) || pedido.itens.some(item => item.altura)) ? 5 : 4} className="p-3 text-right">
+                      <td colSpan={(pedido.itens.some(item => item.largura) || pedido.itens.some(item => item.altura)) ? 6 : 5} className="p-3 text-right">
                         Total:
                       </td>
                       <td className="p-3 text-right">

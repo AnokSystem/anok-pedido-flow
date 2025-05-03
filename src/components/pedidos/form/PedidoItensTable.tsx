@@ -32,6 +32,7 @@ export function PedidoItensTable({
               <TableHead>Unidade</TableHead>
               <TableHead className="text-right">Dimensões</TableHead>
               <TableHead className="text-right">Valor Unit.</TableHead>
+              <TableHead className="text-right">Valor/Un</TableHead>
               <TableHead className="text-right">Total</TableHead>
               <TableHead className="w-[80px]"></TableHead>
             </TableRow>
@@ -39,16 +40,19 @@ export function PedidoItensTable({
           <TableBody>
             {itensPedido.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center text-muted-foreground py-4">
+                <TableCell colSpan={9} className="text-center text-muted-foreground py-4">
                   Nenhum item adicionado
                 </TableCell>
               </TableRow>
             ) : (
               itensPedido.map((item, index) => {
-                // Para itens m², o valor unitário exibido deve ser o preço por m² multiplicado pela área
-                let valorUnitarioExibido = item.valor_unit;
+                // Valor unitário base (preço por m² ou por unidade)
+                const valorUnitario = item.valor_unit;
+                
+                // Para itens m², o valor por unidade é o preço por m² multiplicado pela área
+                let valorPorUnidade = item.valor_unit;
                 if (item.unidade === 'm²' && item.largura && item.altura) {
-                  valorUnitarioExibido = item.valor_unit * item.largura * item.altura;
+                  valorPorUnidade = item.valor_unit * item.largura * item.altura;
                 }
                 
                 return (
@@ -62,7 +66,8 @@ export function PedidoItensTable({
                         ? `${item.largura}m × ${item.altura}m` 
                         : "-"}
                     </TableCell>
-                    <TableCell className="text-right">{formatarCurrency(valorUnitarioExibido)}</TableCell>
+                    <TableCell className="text-right">{formatarCurrency(valorUnitario)}</TableCell>
+                    <TableCell className="text-right">{formatarCurrency(valorPorUnidade)}</TableCell>
                     <TableCell className="text-right">{formatarCurrency(item.valor_total)}</TableCell>
                     <TableCell>
                       <Button
