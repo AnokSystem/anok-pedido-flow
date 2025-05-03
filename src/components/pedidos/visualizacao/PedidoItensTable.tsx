@@ -26,7 +26,6 @@ export function PedidoItensTable({ itens, total }: PedidoItensTableProps) {
                 <th className="text-right p-2">Quantidade</th>
                 <th className="text-left p-2">Unidade</th>
                 {showDimensoes && <th className="text-right p-2">Dimensões</th>}
-                <th className="text-right p-2">Valor Unit.</th>
                 <th className="text-right p-2">Valor/Un</th>
                 <th className="text-right p-2">Total</th>
               </tr>
@@ -34,15 +33,12 @@ export function PedidoItensTable({ itens, total }: PedidoItensTableProps) {
             <tbody>
               {itens.length === 0 ? (
                 <tr className="border-b">
-                  <td colSpan={7} className="p-4 text-center text-muted-foreground">
+                  <td colSpan={6} className="p-4 text-center text-muted-foreground">
                     Nenhum item adicionado a este pedido
                   </td>
                 </tr>
               ) : (
                 itens.map((item, index) => {
-                  // Valor unitário é o preço base por m² ou unidade
-                  const valorUnitario = item.valor_unit;
-                  
                   // Valor por unidade (considerando área para itens m²)
                   let valorPorUnidade = item.valor_unit;
                   if (item.unidade === 'm²' && item.largura && item.altura) {
@@ -61,7 +57,6 @@ export function PedidoItensTable({ itens, total }: PedidoItensTableProps) {
                             : '-'}
                         </td>
                       )}
-                      <td className="p-2 text-right">{formatarCurrency(valorUnitario)}</td>
                       <td className="p-2 text-right">{formatarCurrency(valorPorUnidade)}</td>
                       <td className="p-2 text-right">{formatarCurrency(item.valor_total)}</td>
                     </tr>
@@ -71,7 +66,7 @@ export function PedidoItensTable({ itens, total }: PedidoItensTableProps) {
             </tbody>
             <tfoot>
               <tr className="font-medium">
-                <td colSpan={showDimensoes ? 6 : 5} className="p-3 text-right">
+                <td colSpan={showDimensoes ? 5 : 4} className="p-3 text-right">
                   Total:
                 </td>
                 <td className="p-3 text-right">

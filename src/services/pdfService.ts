@@ -120,8 +120,8 @@ export const generatePedidoPDF = (pedido: Pedido, empresa: Empresa | null) => {
   doc.line(14, startY, 196, startY);
   startY += 8;
   
-  // Add items table - com valores unitários e por unidade corretos
-  const tableColumn = ["Item", "Qtd", "Un", "Dimensões", "Valor Unit.", "Valor/Un", "Total"];
+  // Add items table - removido valor unitário, mantendo apenas valor por unidade
+  const tableColumn = ["Item", "Qtd", "Un", "Dimensões", "Valor/Un", "Total"];
   const tableRows = pedido.itens.map(item => {
     // Usar a descrição do item como informação principal
     const descricao = item.descricao || (item.produto?.nome || 'N/A');
@@ -130,9 +130,6 @@ export const generatePedidoPDF = (pedido: Pedido, empresa: Empresa | null) => {
     const dimensoes = item.largura && item.altura 
       ? `${item.largura}m × ${item.altura}m` 
       : '-';
-    
-    // Para itens m², o valor unitário exibido deve ser o preço por m²
-    const valorUnitarioExibido = item.valor_unit;
     
     // Valor por unidade (considerando área para itens m²)
     let valorPorUnidade = item.valor_unit;
@@ -145,7 +142,6 @@ export const generatePedidoPDF = (pedido: Pedido, empresa: Empresa | null) => {
       item.quantidade.toString(),
       item.unidade,
       dimensoes,
-      formatarCurrency(valorUnitarioExibido),
       formatarCurrency(valorPorUnidade),
       formatarCurrency(item.valor_total)
     ];
@@ -161,8 +157,7 @@ export const generatePedidoPDF = (pedido: Pedido, empresa: Empresa | null) => {
     columnStyles: {
       0: { cellWidth: 50 }, // Coluna de descrição
       3: { cellWidth: 25 }, // Coluna de dimensões
-      4: { cellWidth: 20 }, // Coluna de valor unitário
-      5: { cellWidth: 20 }, // Coluna de valor por unidade
+      4: { cellWidth: 20 }, // Coluna de valor por unidade
     },
   });
   
