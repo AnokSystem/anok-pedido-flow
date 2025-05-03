@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -18,7 +19,7 @@ const clienteSchema = z.object({
   contato: z.string().min(1, "O contato é obrigatório"),
   email: z.string().email("Email inválido").or(z.string().length(0)),
   responsavel: z.string().optional(),
-  desconto_especial: z.string().optional(),
+  desconto_especial: z.coerce.number().optional(),
 });
 
 type ClienteFormData = z.infer<typeof clienteSchema>;
@@ -38,41 +39,77 @@ export function ClienteForm({ open, onOpenChange, onSubmit, cliente, isLoading }
   const form = useForm<ClienteFormData>({
     resolver: zodResolver(clienteSchema),
     defaultValues: {
-      nome: cliente?.nome || "",
-      cpf_cnpj: cliente?.cpf_cnpj || "",
-      rua: cliente?.rua || "",
-      numero: cliente?.numero || "",
-      bairro: cliente?.bairro || "",
-      cidade: cliente?.cidade || "",
-      contato: cliente?.contato || "",
-      email: cliente?.email || "",
-      responsavel: cliente?.responsavel || "",
-      desconto_especial: cliente?.desconto_especial?.toString() || "",
+      nome: "",
+      cpf_cnpj: "",
+      rua: "",
+      numero: "",
+      bairro: "",
+      cidade: "",
+      contato: "",
+      email: "",
+      responsavel: "",
+      desconto_especial: undefined,
     },
   });
+
+  // Reset form when cliente changes or when modal opens/closes
+  useEffect(() => {
+    if (cliente) {
+      form.reset({
+        nome: cliente.nome || "",
+        cpf_cnpj: cliente.cpf_cnpj || "",
+        rua: cliente.rua || "",
+        numero: cliente.numero || "",
+        bairro: cliente.bairro || "",
+        cidade: cliente.cidade || "",
+        contato: cliente.contato || "",
+        email: cliente.email || "",
+        responsavel: cliente.responsavel || "",
+        desconto_especial: cliente.desconto_especial !== null ? cliente.desconto_especial : undefined,
+      });
+    } else if (open) {
+      form.reset({
+        nome: "",
+        cpf_cnpj: "",
+        rua: "",
+        numero: "",
+        bairro: "",
+        cidade: "",
+        contato: "",
+        email: "",
+        responsavel: "",
+        desconto_especial: undefined,
+      });
+    }
+  }, [cliente, open, form]);
 
   const handleSubmit = (data: ClienteFormData) => {
     setIsSubmitting(true);
     
-    // Convert desconto_especial string to number or undefined
-    const descontoEspecial = data.desconto_especial 
-      ? Number(data.desconto_especial) 
-      : undefined;
-    
+    // Prepare data for submission
     const clienteData = {
       ...data,
-      desconto_especial: descontoEspecial,
+      desconto_especial: data.desconto_especial || null,
     };
     
-    if (editMode && cliente) {
-      // Editar cliente existente
-      onSubmit({
-        ...cliente,
-        ...clienteData,
-      });
-    } else {
-      // Adicionar novo cliente
-      onSubmit(clienteData);
+    console.log("Enviando dados:", clienteData);
+    console.log("Edit mode:", editMode);
+    console.log("Cliente original:", cliente);
+    
+    try {
+      if (editMode && cliente) {
+        // Editar cliente existente
+        onSubmit({
+          id: cliente.id,
+          ...clienteData,
+        });
+      } else {
+        // Adicionar novo cliente
+        onSubmit(clienteData);
+      }
+    } catch (error) {
+      console.error("Erro ao submeter formulário:", error);
+      setIsSubmitting(false);
     }
   };
 
@@ -226,6 +263,11 @@ export function ClienteForm({ open, onOpenChange, onSubmit, cliente, isLoading }
                         type="number" 
                         placeholder="Ex: 10" 
                         {...field} 
+                        value={field.value ?? ''}
+                        onChange={(e) => {
+                          const value = e.target.value ? Number(e.target.value) : undefined;
+                          field.onChange(value);
+                        }}
                         min="0"
                         max="100"
                       />

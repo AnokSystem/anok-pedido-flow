@@ -57,14 +57,30 @@ export function useClientes() {
 
   const updateCliente = useMutation({
     mutationFn: async (cliente: Cliente) => {
+      console.log("Atualizando cliente:", cliente);
       const { data, error } = await supabase
         .from('clientes')
-        .update(cliente)
+        .update({
+          nome: cliente.nome,
+          cpf_cnpj: cliente.cpf_cnpj,
+          rua: cliente.rua,
+          numero: cliente.numero,
+          bairro: cliente.bairro,
+          cidade: cliente.cidade,
+          contato: cliente.contato,
+          email: cliente.email,
+          responsavel: cliente.responsavel,
+          desconto_especial: cliente.desconto_especial
+        })
         .eq('id', cliente.id)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erro na atualização:", error);
+        throw error;
+      }
+      console.log("Cliente atualizado com sucesso:", data);
       return data;
     },
     onSuccess: () => {
@@ -75,6 +91,7 @@ export function useClientes() {
       });
     },
     onError: (error) => {
+      console.error("Erro na mutação:", error);
       toast({
         title: 'Erro ao atualizar cliente',
         description: error.message,

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -41,6 +42,7 @@ export default function Clientes() {
   };
 
   const handleOpenEditForm = (cliente: Cliente) => {
+    console.log("Editando cliente:", cliente);
     setSelectedCliente(cliente);
     setFormOpen(true);
   };
@@ -56,9 +58,10 @@ export default function Clientes() {
     try {
       if (selectedCliente) {
         // Editar cliente existente
+        console.log("Atualizando cliente com dados:", data);
         await updateCliente.mutateAsync({
-          ...selectedCliente,
-          ...data
+          ...data,
+          id: selectedCliente.id
         });
       } else {
         // Adicionar novo cliente
