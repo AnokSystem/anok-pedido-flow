@@ -1,0 +1,6 @@
+version: '3'
+services:
+  anok-app:
+    build: .
+    ports:
+      - "6969:80"
