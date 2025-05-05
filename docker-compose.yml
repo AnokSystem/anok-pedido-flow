@@ -1,6 +1,20 @@
-version: '3'
-services:
-  anok-app:
-    build: .
-    ports:
-      - "6969:80"
+version: '3.8'
+     services:
+       app:
+         build:
+           context: .
+           dockerfile: Dockerfile
+         labels:
+           - "traefik.enable=true"
+           - "traefik.http.routers.anok.rule=Host(`folhita.novahagencia.com.br`)"
+           - "traefik.http.routers.anok.entrypoints=websecure"
+           - "traefik.http.routers.anok.tls.certresolver=letsencrypt"
+           - "traefik.http.services.anok.loadbalancer.server.port=8000"
+         environment:
+           - DATABASE_URL=postgresql://postgres:f8c42a262e55391cf62cb11e6d6fd40b@host.docker.internal:5432/anok_pedido
+           - SECRET_KEY=7e2b9f4a1c8d3e6f0a5b2c9d7e4f1a8b3c6d9e2f5a0b
+         networks:
+           - AgenciaSpline
+     networks:
+       AgenciaSpline:
+         external: true
