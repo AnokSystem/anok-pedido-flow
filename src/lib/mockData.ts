@@ -143,6 +143,7 @@ export const pedidosMock: Pedido[] = [
     data_entrega: new Date(2024, 3, 20).toISOString(),
     total: 350.00,
     status: 'Entregue',
+    payment_status: 'Pago',
     itens: [
       {
         id: 'item-1',
@@ -180,6 +181,7 @@ export const pedidosMock: Pedido[] = [
     data_entrega: new Date(2024, 3, 25).toISOString(),
     total: 300.00,
     status: 'Em Produção',
+    payment_status: 'Parcial',
     itens: [
       {
         id: 'item-3',
@@ -206,6 +208,7 @@ export const pedidosMock: Pedido[] = [
     data_entrega: new Date(2024, 3, 27).toISOString(),
     total: 400.00,
     status: 'Criado',
+    payment_status: 'Pendente',
     itens: [
       {
         id: 'item-4',
@@ -248,6 +251,11 @@ export const dashboardStatsMock: DashboardStats = {
     { mes: 'Out', valor: 0 },
     { mes: 'Nov', valor: 0 },
     { mes: 'Dez', valor: 0 }
+  ],
+  pedidosPorPagamento: [
+    { status: 'Pendente', count: 1, valor: 400 },
+    { status: 'Parcial', count: 1, valor: 300 },
+    { status: 'Pago', count: 1, valor: 350 }
   ]
 };
 
@@ -300,6 +308,7 @@ export const criarNovoPedido = (
     data_entrega: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 dias depois
     total: total,
     status: 'Criado',
+    payment_status: 'Pendente',
     itens: itensPedido,
     cliente: cliente
   };
