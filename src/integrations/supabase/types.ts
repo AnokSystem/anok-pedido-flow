@@ -204,6 +204,7 @@ export type Database = {
           empresa_id: string | null
           id: string
           numero_pedido: string
+          payment_status: string | null
           status: string
           total: number
         }
@@ -217,6 +218,7 @@ export type Database = {
           empresa_id?: string | null
           id?: string
           numero_pedido: string
+          payment_status?: string | null
           status?: string
           total?: number
         }
@@ -230,6 +232,7 @@ export type Database = {
           empresa_id?: string | null
           id?: string
           numero_pedido?: string
+          payment_status?: string | null
           status?: string
           total?: number
         }
