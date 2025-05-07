@@ -128,7 +128,7 @@ export function PedidoForm({ open, onOpenChange, onSubmit, pedido, isLoading }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[900px] w-[95vw] max-h-[95vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{editMode ? "Editar Pedido" : "Novo Pedido"}</DialogTitle>
           <DialogDescription>

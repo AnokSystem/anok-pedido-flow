@@ -25,7 +25,7 @@ export function PedidoVisualizacao({ open, onOpenChange, pedido }: PedidoVisuali
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto dialog-content">
+      <DialogContent className="sm:max-w-[900px] w-[95vw] max-h-[95vh] overflow-y-auto dialog-content">
         <DialogHeader className="no-print">
           <DialogTitle className="flex justify-between items-center">
             <span>Pedido: {pedido.numero_pedido}</span>
