@@ -1,3 +1,4 @@
+
 import { Cliente } from "@/types";
 import * as XLSX from 'xlsx';
 
@@ -35,7 +36,8 @@ export const exportClientesToExcel = (clientes: Cliente[]): Blob => {
   for (const cliente of clientes) {
     const values = EXCEL_HEADERS.map(header => {
       const value = cliente[header as keyof Cliente];
-      return value !== null && value !== undefined ? value : '';
+      // Convert all values to string to fix the type error
+      return value !== null && value !== undefined ? String(value) : '';
     });
     excelData.push(values);
   }
@@ -133,6 +135,52 @@ export const downloadExcel = (excelBlob: Blob, filename: string): void => {
   document.body.removeChild(link);
 };
 
+// Export clients to CSV (legacy)
+export const exportClientesToCSV = (clientes: Cliente[]): string => {
+  if (!clientes || clientes.length === 0) throw new Error('No clients to export');
+  
+  // Create CSV header
+  let csvContent = EXCEL_HEADERS.join(',') + '\n';
+  
+  // Add client data rows
+  for (const cliente of clientes) {
+    const values = EXCEL_HEADERS.map(header => {
+      const value = cliente[header as keyof Cliente];
+      
+      // Format value for CSV (quote strings with commas)
+      if (value === null || value === undefined) {
+        return '';
+      } else if (typeof value === 'string' && value.includes(',')) {
+        return `"${value}"`;
+      } else {
+        return String(value);
+      }
+    });
+    
+    csvContent += values.join(',') + '\n';
+  }
+  
+  return csvContent;
+};
+
+// Downloads the CSV file in the browser (legacy)
+export const downloadCSV = (csvContent: string, filename: string): void => {
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  
+  const link = document.createElement('a');
+  
+  // Create a downloadable link
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename);
+  link.style.visibility = 'hidden';
+  
+  // Trigger download
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
 // Parse CSV text to cliente objects
 export const parseCSVToClientes = (csvText: string): Omit<Cliente, 'id'>[] => {
   const lines = csvText.split('\n').filter(line => line.trim());
@@ -214,7 +262,3 @@ function parseCSVLine(line: string): string[] {
   
   return values;
 }
-
-// Export the legacy CSV functions
-export const exportClientesToCSV = exportClientesToCSV;
-export const downloadCSV = downloadCSV;
