@@ -12,11 +12,13 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { formatarCpfCnpj } from "@/lib/utils";
-import { Edit, UserPlus, Trash } from "lucide-react";
+import { Edit, FileDown, FileUp, UserPlus, Trash } from "lucide-react";
 import { useClientes } from "@/hooks/useClientes";
 import { ClienteForm } from "@/components/clientes/ClienteForm";
+import { ImportClientsDialog } from "@/components/clientes/ImportClientsDialog";
 import { Cliente } from "@/types";
 import { toast } from "@/hooks/use-toast";
+import { downloadCSV, exportClientesToCSV } from "@/lib/csvUtils";
 import { 
   AlertDialog,
   AlertDialogContent,
@@ -28,13 +30,15 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function Clientes() {
-  const { clientes, isLoading, createCliente, updateCliente, deleteCliente } = useClientes();
+  const { clientes, isLoading, createCliente, updateCliente, deleteCliente, importClientes } = useClientes();
   
   const [formOpen, setFormOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [selectedCliente, setSelectedCliente] = useState<Cliente | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
 
   const handleOpenNewForm = () => {
     setSelectedCliente(undefined);
@@ -50,6 +54,49 @@ export default function Clientes() {
   const handleOpenDeleteConfirm = (cliente: Cliente) => {
     setSelectedCliente(cliente);
     setConfirmDeleteOpen(true);
+  };
+
+  const handleExportClientes = () => {
+    if (!clientes || clientes.length === 0) {
+      toast({
+        title: "Nenhum cliente para exportar",
+        description: "Não há clientes cadastrados para exportar.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const csvContent = exportClientesToCSV(clientes);
+      const fileName = `clientes-export-${new Date().toISOString().split('T')[0]}.csv`;
+      downloadCSV(csvContent, fileName);
+      
+      toast({
+        title: "Clientes exportados",
+        description: `${clientes.length} clientes foram exportados com sucesso.`,
+      });
+    } catch (error) {
+      console.error("Erro ao exportar clientes:", error);
+      toast({
+        title: "Erro ao exportar",
+        description: "Ocorreu um erro ao exportar os clientes.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleImportClientes = async (clientesToImport: Omit<Cliente, 'id'>[]) => {
+    if (!clientesToImport.length) return;
+    
+    setIsImporting(true);
+    try {
+      await importClientes.mutateAsync(clientesToImport);
+      setImportOpen(false);
+    } catch (error) {
+      console.error("Erro ao importar clientes:", error);
+    } finally {
+      setIsImporting(false);
+    }
   };
 
   const handleSubmit = async (data: any) => {
@@ -113,10 +160,29 @@ export default function Clientes() {
         title="Clientes" 
         subtitle="Gerencie seus clientes e leads"
         actions={
-          <Button className="gap-1" onClick={handleOpenNewForm}>
-            <UserPlus className="h-4 w-4" />
-            <span>Novo Cliente</span>
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              className="gap-1"
+              onClick={() => setImportOpen(true)}
+            >
+              <FileUp className="h-4 w-4" />
+              <span>Importar</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              className="gap-1"
+              onClick={handleExportClientes} 
+              disabled={!clientes?.length || isLoading}
+            >
+              <FileDown className="h-4 w-4" />
+              <span>Exportar</span>
+            </Button>
+            <Button className="gap-1" onClick={handleOpenNewForm}>
+              <UserPlus className="h-4 w-4" />
+              <span>Novo Cliente</span>
+            </Button>
+          </div>
         }
       />
 
@@ -129,10 +195,16 @@ export default function Clientes() {
           ) : !clientes || clientes.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <p className="text-muted-foreground mb-4">Nenhum cliente cadastrado</p>
-              <Button variant="outline" onClick={handleOpenNewForm}>
-                <UserPlus className="h-4 w-4 mr-2" />
-                Adicionar primeiro cliente
-              </Button>
+              <div className="flex flex-wrap gap-2 justify-center">
+                <Button variant="outline" onClick={() => setImportOpen(true)} className="gap-1">
+                  <FileUp className="h-4 w-4" />
+                  Importar clientes
+                </Button>
+                <Button variant="outline" onClick={handleOpenNewForm}>
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Adicionar primeiro cliente
+                </Button>
+              </div>
             </div>
           ) : (
             <Table>
@@ -189,6 +261,14 @@ export default function Clientes() {
         onSubmit={handleSubmit}
         cliente={selectedCliente}
         isLoading={isSubmitting}
+      />
+
+      {/* Diálogo de importação de clientes */}
+      <ImportClientsDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onImport={handleImportClientes}
+        isLoading={isImporting}
       />
 
       {/* Confirmação de exclusão */}

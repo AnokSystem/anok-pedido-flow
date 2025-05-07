@@ -126,11 +126,42 @@ export function useClientes() {
     },
   });
 
+  const importClientes = useMutation({
+    mutationFn: async (clientes: Omit<Cliente, 'id'>[]) => {
+      if (!clientes.length) {
+        throw new Error('Nenhum cliente para importar');
+      }
+
+      const { data, error } = await supabase
+        .from('clientes')
+        .insert(clientes)
+        .select();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['clientes'] });
+      toast({
+        title: 'Clientes importados',
+        description: `${data.length} clientes foram importados com sucesso.`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Erro ao importar clientes',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   return {
     clientes,
     isLoading,
     createCliente,
     updateCliente,
     deleteCliente,
+    importClientes,
   };
 }
