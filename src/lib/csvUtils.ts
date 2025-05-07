@@ -96,9 +96,14 @@ export const parseExcelToClientes = (file: File): Promise<Omit<Cliente, 'id'>[]>
               let value = row[index];
               
               // Handle special types
-              if (header === 'desconto_especial' && value !== undefined && value !== '') {
-                const numValue = Number(value);
-                cliente[header] = isNaN(numValue) ? null : numValue;
+              if (header === 'desconto_especial') {
+                // Fix for the numeric type error - handle empty strings and invalid values
+                if (value === '' || value === undefined || value === null) {
+                  cliente[header] = null;
+                } else {
+                  const numValue = Number(value);
+                  cliente[header] = !isNaN(numValue) ? numValue : null;
+                }
               } else {
                 cliente[header] = value !== undefined && value !== null ? String(value).trim() : null;
               }
@@ -215,9 +220,14 @@ export const parseCSVToClientes = (csvText: string): Omit<Cliente, 'id'>[] => {
         let value = values[index].trim();
         
         // Handle special types
-        if (header === 'desconto_especial' && value) {
-          const numValue = Number(value);
-          cliente[header] = isNaN(numValue) ? null : numValue;
+        if (header === 'desconto_especial') {
+          // Fix for the numeric type error - handle empty strings and invalid values
+          if (value === '') {
+            cliente[header] = null;
+          } else {
+            const numValue = Number(value);
+            cliente[header] = !isNaN(numValue) ? numValue : null;
+          }
         } else {
           cliente[header] = value || null;
         }

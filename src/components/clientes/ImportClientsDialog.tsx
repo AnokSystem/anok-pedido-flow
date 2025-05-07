@@ -77,6 +77,7 @@ export function ImportClientsDialog({
       
       setPreview(importedClientes.slice(0, 3)); // Preview first 3 entries
     } catch (err) {
+      console.error("Error processing file:", err);
       setError(err instanceof Error ? err.message : 'Erro ao processar arquivo');
       setPreview([]);
     }
@@ -115,6 +116,7 @@ export function ImportClientsDialog({
       
       onImport(importedClientes);
     } catch (err) {
+      console.error("Error importing:", err);
       setError(err instanceof Error ? err.message : 'Erro ao processar arquivo');
     }
   };
@@ -188,6 +190,8 @@ export function ImportClientsDialog({
                   {preview.map((cliente, idx) => (
                     <li key={idx}>
                       {cliente.nome} - {cliente.cpf_cnpj || 'Sem CPF/CNPJ'}
+                      {cliente.desconto_especial !== null && 
+                        ` - Desconto: ${cliente.desconto_especial}%`}
                     </li>
                   ))}
                 </ul>
