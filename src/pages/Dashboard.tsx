@@ -4,6 +4,7 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { StatusPedidoChart } from "@/components/dashboard/StatusPedidoChart";
 import { VendasMensaisChart } from "@/components/dashboard/VendasMensaisChart";
 import { UltimosPedidos } from "@/components/dashboard/UltimosPedidos";
+import { PaymentStatusChart } from "@/components/dashboard/PaymentStatusChart";
 import { FileText, Package, ShoppingBag, Users } from "lucide-react";
 import { formatarCurrency } from "@/lib/utils";
 import { useDashboard } from "@/hooks/useDashboard";
@@ -75,12 +76,22 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div>
-        {isLoadingPedidos ? (
-          <Skeleton className="h-96" />
-        ) : (
-          <UltimosPedidos pedidos={ultimosPedidos} />
-        )}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          {isLoadingPedidos ? (
+            <Skeleton className="h-96" />
+          ) : (
+            <UltimosPedidos pedidos={ultimosPedidos} />
+          )}
+        </div>
+        <div>
+          {isLoadingStats ? (
+            <Skeleton className="h-80" />
+          ) : (
+            stats?.pedidosPorPagamento && 
+            <PaymentStatusChart data={stats?.pedidosPorPagamento || []} />
+          )}
+        </div>
       </div>
     </div>
   );

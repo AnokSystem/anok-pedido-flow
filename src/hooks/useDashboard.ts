@@ -1,7 +1,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { DashboardStats, StatusPedido } from '@/types';
+import { DashboardStats, StatusPedido, PaymentStatus } from '@/types';
 
 export function useDashboard() {
   return useQuery({
@@ -44,6 +44,27 @@ export function useDashboard() {
         count,
       }));
 
+      // Fetch orders by payment status
+      const { data: paymentData } = await supabase
+        .from('pedidos')
+        .select('payment_status, total');
+      
+      const pedidosPorPagamento = paymentData?.reduce((acc, pedido) => {
+        const status = pedido.payment_status as PaymentStatus || 'Pendente';
+        if (!acc[status]) {
+          acc[status] = { count: 0, valor: 0 };
+        }
+        acc[status].count += 1;
+        acc[status].valor += Number(pedido.total);
+        return acc;
+      }, {} as Record<PaymentStatus, { count: number, valor: number }>);
+
+      const paymentStats = pedidosPorPagamento ? Object.entries(pedidosPorPagamento).map(([status, data]) => ({
+        status: status as PaymentStatus,
+        count: data.count,
+        valor: data.valor
+      })) : [];
+
       // Fetch orders by month
       const { data: monthlyData } = await supabase
         .from('pedidos')
@@ -69,6 +90,7 @@ export function useDashboard() {
         totalProdutos: totalProdutos || 0,
         pedidosPorStatus: statusCount,
         pedidosPorMes: monthlyStats,
+        pedidosPorPagamento: paymentStats,
       } as DashboardStats;
     },
   });

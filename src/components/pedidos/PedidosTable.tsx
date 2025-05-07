@@ -31,6 +31,12 @@ const statusColors = {
   'Entregue': 'bg-gray-100 text-gray-800 hover:bg-gray-200'
 };
 
+const paymentStatusColors = {
+  'Pago': 'bg-green-100 text-green-800 hover:bg-green-200',
+  'Pendente': 'bg-red-100 text-red-800 hover:bg-red-200',
+  'Parcial': 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+};
+
 export function PedidosTable({
   pedidos,
   onView,
@@ -65,6 +71,7 @@ export function PedidosTable({
           <TableHead>Data Emissão</TableHead>
           <TableHead>Data Entrega</TableHead>
           <TableHead>Status</TableHead>
+          <TableHead>Pagamento</TableHead>
           <TableHead className="text-right">Total</TableHead>
           <TableHead className="text-right">Ações</TableHead>
         </TableRow>
@@ -90,6 +97,14 @@ export function PedidosTable({
                 className={statusColors[pedido.status as keyof typeof statusColors]}
               >
                 {pedido.status}
+              </Badge>
+            </TableCell>
+            <TableCell>
+              <Badge 
+                variant="secondary" 
+                className={paymentStatusColors[pedido.payment_status as keyof typeof paymentStatusColors]}
+              >
+                {pedido.payment_status}
               </Badge>
             </TableCell>
             <TableCell className="text-right">

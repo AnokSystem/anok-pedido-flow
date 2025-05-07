@@ -46,6 +46,7 @@ export type Produto = {
 };
 
 export type StatusPedido = 'Criado' | 'Em Produção' | 'Pronto' | 'Entregue';
+export type PaymentStatus = 'Pago' | 'Pendente' | 'Parcial';
 
 export interface Pedido {
   id: string;
@@ -55,6 +56,7 @@ export interface Pedido {
   data_entrega?: string;
   total: number;
   status: string;
+  payment_status: PaymentStatus;
   cliente?: Cliente;
   itens: ItemPedido[];
   descricao?: string;
@@ -103,6 +105,11 @@ export type DashboardStats = {
   }[];
   pedidosPorMes: {
     mes: string;
+    valor: number;
+  }[];
+  pedidosPorPagamento?: {
+    status: PaymentStatus;
+    count: number;
     valor: number;
   }[];
 }

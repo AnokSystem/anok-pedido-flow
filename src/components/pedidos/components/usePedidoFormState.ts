@@ -14,6 +14,7 @@ const pedidoSchema = z.object({
   data_emissao: z.date(),
   data_entrega: z.date().optional(),
   status: z.string().min(1, "Selecione um status"),
+  payment_status: z.enum(["Pendente", "Parcial", "Pago"]),
   descricao: z.string().optional(),
 });
 
@@ -44,6 +45,7 @@ export function usePedidoFormState(open: boolean, onOpenChange: (open: boolean) 
       data_emissao: pedido?.data_emissao ? new Date(pedido.data_emissao) : new Date(),
       data_entrega: pedido?.data_entrega ? new Date(pedido.data_entrega) : undefined,
       status: pedido?.status || "Criado",
+      payment_status: pedido?.payment_status || "Pendente",
       descricao: pedido?.descricao || "",
     },
   });
@@ -85,6 +87,7 @@ export function usePedidoFormState(open: boolean, onOpenChange: (open: boolean) 
           data_emissao: pedido.data_emissao ? new Date(pedido.data_emissao) : new Date(),
           data_entrega: pedido.data_entrega ? new Date(pedido.data_entrega) : undefined,
           status: pedido.status,
+          payment_status: pedido.payment_status || "Pendente",
           descricao: pedido.descricao,
         });
         setClienteSelecionado(pedido.cliente_id);
@@ -95,6 +98,7 @@ export function usePedidoFormState(open: boolean, onOpenChange: (open: boolean) 
           data_emissao: new Date(),
           data_entrega: undefined,
           status: "Criado",
+          payment_status: "Pendente",
           descricao: "",
         });
         setClienteSelecionado("");

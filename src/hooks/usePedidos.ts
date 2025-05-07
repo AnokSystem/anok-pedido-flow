@@ -27,8 +27,10 @@ export function usePedidos() {
       }
       
       // Adicionar propriedade itens vazia para cada pedido para corresponder ao tipo Pedido
+      // Set default payment_status to "Pendente" if it's not in the database
       return (data || []).map(pedido => ({
         ...pedido,
+        payment_status: pedido.payment_status || 'Pendente',
         itens: [] as ItemPedido[]
       })) as Pedido[];
     },
@@ -61,9 +63,16 @@ export function usePedidos() {
         .order('id');
 
       if (itensError) throw itensError;
+
+      // Set default payment_status if it's not in the database
+      const pedidoCompleto = {
+        ...pedido,
+        payment_status: pedido.payment_status || 'Pendente',
+        itens: itens || []
+      };
       
       // Combinar pedido com itens
-      return { ...pedido, itens: itens || [] } as Pedido;
+      return pedidoCompleto as Pedido;
     } catch (error) {
       console.error('Erro ao buscar pedido por ID:', error);
       throw error;
@@ -170,6 +179,7 @@ export function usePedidos() {
           data_entrega: novoPedido.data_entrega,
           total: novoPedido.total,
           status: novoPedido.status,
+          payment_status: novoPedido.payment_status || 'Pendente',
           descricao: novoPedido.descricao,
           empresa_id: novoPedido.empresa_id || null
         })
@@ -240,6 +250,7 @@ export function usePedidos() {
           data_entrega: pedido.data_entrega,
           total: pedido.total,
           status: pedido.status,
+          payment_status: pedido.payment_status || 'Pendente',
           descricao: pedido.descricao
         })
         .eq('id', pedido.id);
