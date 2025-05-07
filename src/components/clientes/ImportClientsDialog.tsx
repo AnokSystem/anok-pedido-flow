@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { parseCSVToClientes } from "@/lib/csvUtils";
+import { parseExcelToClientes, parseCSVToClientes } from "@/lib/csvUtils";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -32,7 +32,7 @@ export function ImportClientsDialog({
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<Omit<Cliente, 'id'>[]>([]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setError(null);
     
     if (!e.target.files || e.target.files.length === 0) {
@@ -43,8 +43,13 @@ export function ImportClientsDialog({
     
     const selectedFile = e.target.files[0];
     
-    if (selectedFile.type !== 'text/csv' && !selectedFile.name.endsWith('.csv')) {
-      setError('Por favor, selecione um arquivo CSV válido.');
+    // Check file type
+    const isExcel = selectedFile.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
+                   selectedFile.name.endsWith('.xlsx');
+    const isCsv = selectedFile.type === 'text/csv' || selectedFile.name.endsWith('.csv');
+    
+    if (!isExcel && !isCsv) {
+      setError('Por favor, selecione um arquivo Excel (.xlsx) ou CSV válido.');
       setFile(null);
       return;
     }
@@ -52,42 +57,65 @@ export function ImportClientsDialog({
     setFile(selectedFile);
     
     // Read file and preview
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const csvText = event.target?.result as string;
-        const importedClientes = parseCSVToClientes(csvText);
-        setPreview(importedClientes.slice(0, 3)); // Preview first 3 entries
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Erro ao processar arquivo CSV');
-        setPreview([]);
+    try {
+      let importedClientes: Omit<Cliente, 'id'>[] = [];
+      
+      if (isExcel) {
+        importedClientes = await parseExcelToClientes(selectedFile);
+      } else if (isCsv) {
+        const reader = new FileReader();
+        const csvText = await new Promise<string>((resolve, reject) => {
+          reader.onload = (event) => {
+            resolve(event.target?.result as string);
+          };
+          reader.onerror = reject;
+          reader.readAsText(selectedFile);
+        });
+        
+        importedClientes = parseCSVToClientes(csvText);
       }
-    };
-    reader.readAsText(selectedFile);
+      
+      setPreview(importedClientes.slice(0, 3)); // Preview first 3 entries
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao processar arquivo');
+      setPreview([]);
+    }
   };
 
   const handleImport = async () => {
     if (!file) {
-      setError('Por favor, selecione um arquivo CSV para importar.');
+      setError('Por favor, selecione um arquivo para importar.');
       return;
     }
     
     try {
       setError(null);
       
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          const csvText = event.target?.result as string;
-          const importedClientes = parseCSVToClientes(csvText);
-          onImport(importedClientes);
-        } catch (err) {
-          setError(err instanceof Error ? err.message : 'Erro ao processar arquivo CSV');
-        }
-      };
-      reader.readAsText(file);
+      // Determine file type and parse accordingly
+      const isExcel = file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
+                     file.name.endsWith('.xlsx');
+      
+      let importedClientes: Omit<Cliente, 'id'>[] = [];
+      
+      if (isExcel) {
+        importedClientes = await parseExcelToClientes(file);
+      } else {
+        // Assume CSV
+        const reader = new FileReader();
+        const csvText = await new Promise<string>((resolve, reject) => {
+          reader.onload = (event) => {
+            resolve(event.target?.result as string);
+          };
+          reader.onerror = reject;
+          reader.readAsText(file);
+        });
+        
+        importedClientes = parseCSVToClientes(csvText);
+      }
+      
+      onImport(importedClientes);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao processar arquivo CSV');
+      setError(err instanceof Error ? err.message : 'Erro ao processar arquivo');
     }
   };
 
@@ -109,7 +137,7 @@ export function ImportClientsDialog({
         <DialogHeader>
           <DialogTitle>Importar Clientes</DialogTitle>
           <DialogDescription>
-            Carregue um arquivo CSV com os dados dos clientes para importação em massa.
+            Carregue um arquivo Excel (.xlsx) ou CSV com os dados dos clientes para importação em massa.
             <br />
             O arquivo deve conter pelo menos as colunas 'nome' e 'cpf_cnpj'.
           </DialogDescription>
@@ -117,14 +145,14 @@ export function ImportClientsDialog({
 
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <label htmlFor="csv-file" className="text-sm font-medium">
-              Arquivo CSV
+            <label htmlFor="client-file" className="text-sm font-medium">
+              Arquivo Excel ou CSV
             </label>
             <div className="flex items-center gap-2">
               <Input
-                id="csv-file"
+                id="client-file"
                 type="file"
-                accept=".csv"
+                accept=".xlsx,.csv"
                 onChange={handleFileChange}
                 disabled={isLoading}
                 className="flex-1"

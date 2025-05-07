@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -18,7 +17,7 @@ import { ClienteForm } from "@/components/clientes/ClienteForm";
 import { ImportClientsDialog } from "@/components/clientes/ImportClientsDialog";
 import { Cliente } from "@/types";
 import { toast } from "@/hooks/use-toast";
-import { downloadCSV, exportClientesToCSV } from "@/lib/csvUtils";
+import { downloadExcel, exportClientesToExcel } from "@/lib/csvUtils";
 import { 
   AlertDialog,
   AlertDialogContent,
@@ -67,9 +66,9 @@ export default function Clientes() {
     }
 
     try {
-      const csvContent = exportClientesToCSV(clientes);
-      const fileName = `clientes-export-${new Date().toISOString().split('T')[0]}.csv`;
-      downloadCSV(csvContent, fileName);
+      const excelBlob = exportClientesToExcel(clientes);
+      const fileName = `clientes-export-${new Date().toISOString().split('T')[0]}.xlsx`;
+      downloadExcel(excelBlob, fileName);
       
       toast({
         title: "Clientes exportados",
@@ -167,7 +166,7 @@ export default function Clientes() {
               onClick={() => setImportOpen(true)}
             >
               <FileUp className="h-4 w-4" />
-              <span>Importar</span>
+              <span>Importar Excel</span>
             </Button>
             <Button 
               variant="outline" 
@@ -176,7 +175,7 @@ export default function Clientes() {
               disabled={!clientes?.length || isLoading}
             >
               <FileDown className="h-4 w-4" />
-              <span>Exportar</span>
+              <span>Exportar Excel</span>
             </Button>
             <Button className="gap-1" onClick={handleOpenNewForm}>
               <UserPlus className="h-4 w-4" />

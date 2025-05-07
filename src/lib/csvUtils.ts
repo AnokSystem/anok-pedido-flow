@@ -1,8 +1,8 @@
-
 import { Cliente } from "@/types";
+import * as XLSX from 'xlsx';
 
-// Define the column headers for cliente CSV
-const CSV_HEADERS = [
+// Define the column headers for cliente Excel
+const EXCEL_HEADERS = [
   'nome',
   'cpf_cnpj',
   'rua',
@@ -15,34 +15,122 @@ const CSV_HEADERS = [
   'desconto_especial'
 ];
 
-// Helper to validate CSV headers
+// Helper to validate headers
 export const validateHeaders = (headers: string[]): boolean => {
   const requiredHeaders = ['nome', 'cpf_cnpj']; // Minimum required fields
   return requiredHeaders.every(header => headers.includes(header));
 };
 
-// Export clientes to CSV
-export const exportClientesToCSV = (clientes: Cliente[]): string => {
-  if (!clientes || clientes.length === 0) return '';
+// Export clientes to Excel
+export const exportClientesToExcel = (clientes: Cliente[]): Blob => {
+  if (!clientes || clientes.length === 0) throw new Error('No clients to export');
 
-  const csvRows = [];
+  // Create a workbook
+  const wb = XLSX.utils.book_new();
   
-  // Add headers
-  csvRows.push(CSV_HEADERS.join(','));
+  // Create data array with headers first
+  const excelData = [EXCEL_HEADERS];
   
-  // Add data rows
+  // Add client data rows
   for (const cliente of clientes) {
-    const values = CSV_HEADERS.map(header => {
+    const values = EXCEL_HEADERS.map(header => {
       const value = cliente[header as keyof Cliente];
-      // Format the value properly for CSV
-      if (value === null || value === undefined) return '';
-      if (typeof value === 'string') return `"${value.replace(/"/g, '""')}"`;
-      return String(value);
+      return value !== null && value !== undefined ? value : '';
     });
-    csvRows.push(values.join(','));
+    excelData.push(values);
   }
   
-  return csvRows.join('\n');
+  // Create worksheet
+  const ws = XLSX.utils.aoa_to_sheet(excelData);
+  
+  // Add worksheet to workbook
+  XLSX.utils.book_append_sheet(wb, ws, 'Clientes');
+  
+  // Generate Excel file
+  const excelBuffer = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+  
+  return new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+};
+
+// Parse Excel to cliente objects
+export const parseExcelToClientes = (file: File): Promise<Omit<Cliente, 'id'>[]> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        
+        // Get first worksheet
+        const worksheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[worksheetName];
+        
+        // Convert to JSON
+        const jsonData = XLSX.utils.sheet_to_json<Record<string, any>>(worksheet, { header: 1 });
+        
+        if (jsonData.length < 2) {
+          throw new Error('O arquivo Excel deve conter pelo menos um cabeçalho e uma linha de dados');
+        }
+        
+        // Get headers (first row)
+        const headers = (jsonData[0] as string[]).map(h => String(h).trim().toLowerCase());
+        
+        if (!validateHeaders(headers)) {
+          throw new Error('O arquivo Excel deve conter pelo menos os campos obrigatórios: nome, cpf_cnpj');
+        }
+        
+        const clientes: Omit<Cliente, 'id'>[] = [];
+        
+        // Parse data rows (skip header)
+        for (let i = 1; i < jsonData.length; i++) {
+          const row = jsonData[i] as any[];
+          if (!row || row.length === 0) continue;
+          
+          const cliente: Record<string, any> = { empresa_id: null }; // Will be assigned server-side
+          
+          headers.forEach((header, index) => {
+            if (EXCEL_HEADERS.includes(header) && index < row.length) {
+              let value = row[index];
+              
+              // Handle special types
+              if (header === 'desconto_especial' && value !== undefined && value !== '') {
+                const numValue = Number(value);
+                cliente[header] = isNaN(numValue) ? null : numValue;
+              } else {
+                cliente[header] = value !== undefined && value !== null ? String(value).trim() : null;
+              }
+            }
+          });
+          
+          clientes.push(cliente as Omit<Cliente, 'id'>);
+        }
+        
+        resolve(clientes);
+      } catch (error) {
+        reject(error);
+      }
+    };
+    
+    reader.onerror = (error) => reject(error);
+    reader.readAsArrayBuffer(file);
+  });
+};
+
+// Downloads the Excel file in the browser
+export const downloadExcel = (excelBlob: Blob, filename: string): void => {
+  const link = document.createElement('a');
+  
+  // Create a downloadable link
+  const url = URL.createObjectURL(excelBlob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename);
+  link.style.visibility = 'hidden';
+  
+  // Trigger download
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 };
 
 // Parse CSV text to cliente objects
@@ -75,7 +163,7 @@ export const parseCSVToClientes = (csvText: string): Omit<Cliente, 'id'>[] => {
     const cliente: Record<string, any> = { empresa_id: null }; // Will be assigned server-side
     
     headers.forEach((header, index) => {
-      if (CSV_HEADERS.includes(header)) {
+      if (EXCEL_HEADERS.includes(header)) {
         let value = values[index].trim();
         
         // Handle special types
@@ -127,19 +215,6 @@ function parseCSVLine(line: string): string[] {
   return values;
 }
 
-// Downloads the CSV file in the browser
-export const downloadCSV = (csvContent: string, filename: string): void => {
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  
-  // Create a downloadable link
-  const url = URL.createObjectURL(blob);
-  link.setAttribute('href', url);
-  link.setAttribute('download', filename);
-  link.style.visibility = 'hidden';
-  
-  // Trigger download
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-};
+// Export the legacy CSV functions
+export const exportClientesToCSV = exportClientesToCSV;
+export const downloadCSV = downloadCSV;
