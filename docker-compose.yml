@@ -1,3 +1,4 @@
+
 version: '3.8'
 services:
   app:
@@ -11,8 +12,10 @@ services:
       - "traefik.http.routers.anok.tls.certresolver=letsencrypt"
       - "traefik.http.services.anok.loadbalancer.server.port=8000"
     environment:
-      - DATABASE_URL=postgresql://postgres:f8c42a262e55391cf62cb11e6d6fd40b@172.17.0.1:5432/anok_pedido
+      - DATABASE_URL=postgresql://postgres:708b9f49b92d719c24476c81a3154a56@172.17.0.1:5432/anok_pedido
       - SECRET_KEY=7e2b9f4a1c8d3e6f0a5b2c9d7e4f1a8b3c6d9e2f5a0b
+      - SUPABASE_URL=https://supa.novahagencia.com.br
+      - SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogImFub24iLAogICJpc3MiOiAic3VwYWJhc2UiLAogICJpYXQiOiAxNzE1MDUwODAwLAogICJleHAiOiAxODcyODE3MjAwCn0.VA172yCE6TaoorgdMAm7NLBNNkyGzysvoSFoLDvEb-M
     networks:
       - AgenciaSpline
 networks:
